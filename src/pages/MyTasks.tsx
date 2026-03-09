@@ -24,14 +24,14 @@ export default function MyTasks() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Default to logged-in user's windows account
+  // Default to logged-in user's display name if it matches a task owner
   useEffect(() => {
-    if (!selectedOwner && windowsAccount && taskOwners.includes(windowsAccount)) {
-      setSelectedOwner(windowsAccount);
+    if (!selectedOwner && displayName && taskOwners.includes(displayName)) {
+      setSelectedOwner(displayName);
     } else if (!selectedOwner && taskOwners.length > 0) {
       setSelectedOwner(taskOwners[0]);
     }
-  }, [windowsAccount, taskOwners, selectedOwner]);
+  }, [displayName, taskOwners, selectedOwner]);
 
   // Fetch all tasks for the selected DBA
   useEffect(() => {
