@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
-import { useMigrationData } from "@/contexts/MigrationContext";
+import { useState, useMemo, useEffect } from "react";
+import { useMigrationData, MigrationDB } from "@/contexts/MigrationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ProgressBar } from "@/components/ProgressBar";
