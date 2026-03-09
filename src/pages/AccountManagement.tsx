@@ -231,6 +231,15 @@ export default function AccountManagement() {
           <p className="text-muted-foreground">管理系統使用者帳號</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={async () => {
+            try {
+              const res = await callManageUsers("batch_set_windows_account");
+              toast.success(res.message);
+              fetchUsers();
+            } catch (err: any) { toast.error(err.message); }
+          }}>
+            同步 Windows Account
+          </Button>
           <Button variant="outline" onClick={handleBatchCreateDBAs}>
             批量建立 DBA 帳號
           </Button>

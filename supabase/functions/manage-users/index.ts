@@ -115,6 +115,26 @@ serve(async (req) => {
       });
     }
 
+    if (action === "batch_set_windows_account") {
+      // Set windows_account = display_name for all users that don't have one
+      const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
+      if (error) throw error;
+      let updated = 0;
+      for (const u of users) {
+        const wa = u.user_metadata?.windows_account;
+        const dn = u.user_metadata?.display_name || u.email;
+        if (!wa || wa === "") {
+          await supabaseAdmin.auth.admin.updateUserById(u.id, {
+            user_metadata: { ...u.user_metadata, windows_account: dn },
+          });
+          updated++;
+        }
+      }
+      return new Response(JSON.stringify({ message: `Updated ${updated} users` }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "update") {
       const { user_id, display_name, windows_account } = params;
       // Update user_metadata
