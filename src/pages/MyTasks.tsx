@@ -14,8 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 export default function MyTasks() {
   const { migrations, toggleTaskComplete } = useMigrationData();
-  const dbas = [...new Set(migrations.map(m => m.dba).filter(Boolean))].sort();
-  const [selectedDba, setSelectedDba] = useState(dbas[0] || "");
+  const taskOwners = [...new Set(migrations.map(m => m.task_owner).filter(Boolean))].sort();
+  const [selectedOwner, setSelectedOwner] = useState(taskOwners[0] || "");
   const [completedOpen, setCompletedOpen] = useState(false);
   const [noteInput, setNoteInput] = useState<Record<string, string>>({});
   const [allTasks, setAllTasks] = useState<MigrationTaskDB[]>([]);
@@ -24,16 +24,16 @@ export default function MyTasks() {
 
   // Fetch all tasks for the selected DBA
   useEffect(() => {
-    if (!selectedDba) return;
+    if (!selectedOwner) return;
     setLoading(true);
-    supabase.from("migration_tasks").select("*").eq("assignee", selectedDba).order("order")
+    supabase.from("migration_tasks").select("*").eq("assignee", selectedOwner).order("order")
       .then(({ data }) => {
         setAllTasks((data || []) as MigrationTaskDB[]);
         setLoading(false);
       });
-  }, [selectedDba]);
+  }, [selectedOwner]);
 
-  const myMigrations = migrations.filter(m => m.dba === selectedDba).sort((a, b) => a.migration_date.localeCompare(b.migration_date));
+  const myMigrations = migrations.filter(m => m.task_owner === selectedOwner).sort((a, b) => a.migration_date.localeCompare(b.migration_date));
   const delayed = myMigrations.filter(m => m.overall_status === "delayed");
   const inProgress = myMigrations.filter(m => m.overall_status === "in_progress");
   const upcoming = myMigrations.filter(m => m.overall_status === "not_started");
@@ -74,7 +74,7 @@ export default function MyTasks() {
   const handleToggle = async (taskId: string) => {
     await toggleTaskComplete(taskId);
     // Refresh tasks
-    const { data } = await supabase.from("migration_tasks").select("*").eq("assignee", selectedDba).order("order");
+    const { data } = await supabase.from("migration_tasks").select("*").eq("assignee", selectedOwner).order("order");
     setAllTasks((data || []) as MigrationTaskDB[]);
   };
 
@@ -87,11 +87,11 @@ export default function MyTasks() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">My Tasks</h1>
-          <p className="text-muted-foreground">DBA personal task view</p>
+          <p className="text-muted-foreground">Task Owner personal task view</p>
         </div>
-        <Select value={selectedDba} onValueChange={setSelectedDba}>
+        <Select value={selectedOwner} onValueChange={setSelectedOwner}>
           <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-          <SelectContent>{dbas.map(dba => <SelectItem key={dba} value={dba}>{dba}</SelectItem>)}</SelectContent>
+          <SelectContent>{taskOwners.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
         </Select>
       </div>
 
