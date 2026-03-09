@@ -100,7 +100,8 @@ export default function MigrationList() {
         case "phase": cmp = a.phase.localeCompare(b.phase); break;
         case "dbType": cmp = a.db_type.localeCompare(b.db_type); break;
         case "dDay": cmp = a.migration_date.localeCompare(b.migration_date); break;
-        task_owner.localeCompare(b.task_ocase "dba": cmp = a.task_owner.localeCompare(b.task_owner": cmp = a.ap_sponsor.localeCompare(b.ap_sponsor); break;
+        case "dba": cmp = a.task_owner.localeCompare(b.task_owner); break;
+        case "apSponsor": cmp = a.ap_sponsor.localeCompare(b.ap_sponsor); break;
         case "stage": cmp = (stageOrder[a.stage] ?? 99) - (stageOrder[b.stage] ?? 99); break;
         case "progress": cmp = a.completion_percent - b.completion_percent; break;
         case "status": cmp = a.overall_status.localeCompare(b.overall_status); break;
