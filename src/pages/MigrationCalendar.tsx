@@ -96,7 +96,9 @@ export default function MigrationCalendar() {
                                 {items.map(m => (
                                   <div key={m.id} className="flex items-center justify-between rounded border bg-background px-2.5 py-1.5">
                                     <div>
-                                      <p className="text-xs font-mono font-semibold">{m.dbid}</p>
+                                      <p className="text-xs font-mono font-semibold">
+                                        <span className={m.prod_or_test === "PROD" ? "text-blue-600" : "text-foreground"}>{m.prod_or_test}:{m.dbid}</span>
+                                      </p>
                                       <p className="text-[10px] text-muted-foreground">{m.dba} · {m.migration_date}</p>
                                     </div>
                                   </div>
