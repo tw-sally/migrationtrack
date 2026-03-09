@@ -87,11 +87,11 @@ export default function MyTasks() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">My Tasks</h1>
-          <p className="text-muted-foreground">DBA personal task view</p>
+          <p className="text-muted-foreground">Task Owner personal task view</p>
         </div>
-        <Select value={selectedDba} onValueChange={setSelectedDba}>
+        <Select value={selectedOwner} onValueChange={setSelectedOwner}>
           <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-          <SelectContent>{dbas.map(dba => <SelectItem key={dba} value={dba}>{dba}</SelectItem>)}</SelectContent>
+          <SelectContent>{taskOwners.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
         </Select>
       </div>
 
