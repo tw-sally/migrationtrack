@@ -227,10 +227,10 @@ export default function MigrationList() {
               </SelectContent>
             </Select>
             <Select value={dbaFilter} onValueChange={setDbaFilter}>
-              <SelectTrigger className="w-[140px]"><SelectValue placeholder="DBA" /></SelectTrigger>
+              <SelectTrigger className="w-[160px]"><SelectValue placeholder="Task Owner" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All DBA</SelectItem>
-                {dbas.map(dba => <SelectItem key={dba} value={dba}>{dba}</SelectItem>)}
+                <SelectItem value="all">All Task Owner</SelectItem>
+                {taskOwners.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
