@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
-import { useMigrationData } from "@/contexts/MigrationContext";
+import { useState, useMemo, useEffect } from "react";
+import { useMigrationData, MigrationDB } from "@/contexts/MigrationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ProgressBar } from "@/components/ProgressBar";
@@ -16,6 +17,7 @@ const COLORS = [
 export default function Dashboard() {
   const { migrations, templates } = useMigrationData();
   const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
+  const [delayedMigrationIds, setDelayedMigrationIds] = useState<Set<string>>(new Set());
 
   const toggleTemplate = (id: string) => {
     setSelectedTemplates(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]);
@@ -26,10 +28,47 @@ export default function Dashboard() {
     return migrations.filter(m => m.template_id && selectedTemplates.includes(m.template_id));
   }, [migrations, selectedTemplates]);
 
+  // Compute delayed: current date > migration_date AND first D-Day task not completed
+  useEffect(() => {
+    const computeDelayed = async () => {
+      const today = new Date().toISOString().split("T")[0];
+      const pastDueMigrations = migrations.filter(m => m.migration_date < today && m.overall_status !== "completed");
+      if (pastDueMigrations.length === 0) { setDelayedMigrationIds(new Set()); return; }
+
+      const ids = pastDueMigrations.map(m => m.id);
+      const { data: dDayTasks } = await supabase
+        .from("migration_tasks")
+        .select("id, migration_id, status, order")
+        .in("migration_id", ids)
+        .eq("milestone", "D-Day")
+        .order("order", { ascending: true });
+
+      // Group by migration_id, check if first D-Day task is not completed
+      const delayedIds = new Set<string>();
+      const seen = new Set<string>();
+      for (const t of (dDayTasks || [])) {
+        if (!seen.has(t.migration_id)) {
+          seen.add(t.migration_id);
+          if (t.status !== "completed") {
+            delayedIds.add(t.migration_id);
+          }
+        }
+      }
+      // Also include past-due migrations with no D-Day tasks at all
+      for (const m of pastDueMigrations) {
+        if (!seen.has(m.id)) delayedIds.add(m.id);
+      }
+      setDelayedMigrationIds(delayedIds);
+    };
+    computeDelayed();
+  }, [migrations]);
+
+  const delayedMigrations = useMemo(() => filtered.filter(m => delayedMigrationIds.has(m.id)), [filtered, delayedMigrationIds]);
+
   const total = filtered.length;
   const completed = filtered.filter(m => m.overall_status === "completed").length;
   const inProgress = filtered.filter(m => m.overall_status === "in_progress").length;
-  const delayed = filtered.filter(m => m.overall_status === "delayed").length;
+  const delayed = delayedMigrations.length;
   const notStarted = filtered.filter(m => m.overall_status === "not_started").length;
   const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
@@ -167,11 +206,13 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {filtered.filter(m => m.overall_status === "delayed").map(m => (
+            {delayedMigrations.map(m => (
               <div key={m.id} className="flex items-center justify-between p-3 rounded-lg bg-delay/5 border border-delay/20">
                 <div>
-                  <p className="font-medium font-mono text-sm">{m.dbid}</p>
-                  <p className="text-xs text-muted-foreground">DBA: {m.dba} | D-Day: {m.migration_date}</p>
+                  <p className="font-medium font-mono text-sm">
+                    <span className={m.prod_or_test === "PROD" ? "text-blue-600" : "text-foreground"}>{m.prod_or_test}:{m.dbid}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">Task Owner: {m.task_owner} | D-Day: {m.migration_date}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <ProgressBar value={m.completion_percent} className="w-32" />
@@ -179,7 +220,7 @@ export default function Dashboard() {
                 </div>
               </div>
             ))}
-            {filtered.filter(m => m.overall_status === "delayed").length === 0 && (
+            {delayedMigrations.length === 0 && (
               <p className="text-sm text-muted-foreground">No delayed migrations 🎉</p>
             )}
           </div>
