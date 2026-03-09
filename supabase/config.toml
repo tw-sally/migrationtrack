@@ -1,0 +1,13 @@
+project_id = "dlxyrjuxylyftwplbdue"
+
+[functions.bulk-complete-migrations]
+verify_jwt = false
+
+[functions.regenerate-tasks-by-date]
+verify_jwt = false
+
+[functions.fix-specific-migrations]
+verify_jwt = false
+
+[functions.bulk-update-task-status]
+verify_jwt = false

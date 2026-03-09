@@ -1,0 +1,1 @@
+ALTER TABLE template_tasks ADD COLUMN remarks text DEFAULT '';

@@ -1,0 +1,1 @@
+ALTER TABLE migrations ADD COLUMN remarks text DEFAULT '';

@@ -1,0 +1,1 @@
+ALTER TABLE migration_tasks ADD COLUMN remarks text DEFAULT '' ;
