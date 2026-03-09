@@ -34,11 +34,21 @@ export default function MigrationDetail() {
   // Local status overrides (not yet saved)
   const [localStatusOverrides, setLocalStatusOverrides] = useState<Record<string, { status: string; completed_at: string | null }>>({});
 
-  const templateName = useMemo(() => {
-    if (!migration?.template_id) return "—";
-    const tpl = templates.find(t => t.id === migration.template_id);
-    return tpl?.name || "—";
+  const template = useMemo(() => {
+    if (!migration?.template_id) return null;
+    return templates.find(t => t.id === migration.template_id) || null;
   }, [templates, migration?.template_id]);
+
+  const templateName = template?.name || "—";
+
+  // Dev/CAT templates only use D-1M, D-Day, Post
+  const activeMilestones = useMemo(() => {
+    const name = templateName.toLowerCase();
+    if (name.includes("dev") || name.includes("cat")) {
+      return milestoneOrder.filter(m => m !== "D-3M" && m !== "D-2M");
+    }
+    return milestoneOrder;
+  }, [templateName]);
 
   useEffect(() => {
     if (id) {
