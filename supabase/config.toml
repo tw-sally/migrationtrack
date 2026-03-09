@@ -18,5 +18,8 @@ verify_jwt = false
 [functions.manage-users]
 verify_jwt = false
 
+[functions.manage-users-v2]
+verify_jwt = false
+
 [functions.seed-admin]
 verify_jwt = false
