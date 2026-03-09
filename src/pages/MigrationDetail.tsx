@@ -65,7 +65,7 @@ export default function MigrationDetail() {
   }
 
   const tasks = migrationTasks.filter(t => t.migration_id === id);
-  const milestones = milestoneOrder;
+  const milestones = activeMilestones;
 
   const getMilestoneDate = (ms: MilestonePhase) => {
     switch (ms) {
