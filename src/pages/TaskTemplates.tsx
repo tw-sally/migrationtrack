@@ -228,7 +228,7 @@ export default function TaskTemplates() {
               </div>
 
               <div className="space-y-6">
-                {milestoneOrder.map(milestone => {
+                {getTemplateMilestones(tpl.name).map(milestone => {
                   const milestoneTasks = tpl.tasks.filter(t => t.milestone === milestone).sort((a, b) => a.order - b.order);
                   return (
                     <div key={milestone}>
