@@ -99,8 +99,8 @@ export function AddMigrationDialog({ open, onOpenChange }: Props) {
   };
 
   const handleSave = async () => {
-    if (!dbid || !dba || !dDay || !templateId) {
-      toast.error("Please fill in required fields: DBID, DBA, D-Day, Task Template");
+    if (!dbid || !dba || !taskOwner || !dDay || !templateId) {
+      toast.error("Please fill in required fields: DBID, DB Owner, Task Owner, D-Day, Task Template");
       return;
     }
     if (dbRole === "DEV/CAT" && !sourceDbType) {
