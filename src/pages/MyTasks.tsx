@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export default function MyTasks() {
   const { migrations, toggleTaskComplete } = useMigrationData();
-  const { windowsAccount } = useAuth();
+  const { displayName } = useAuth();
   const taskOwners = [...new Set(migrations.map(m => m.task_owner).filter(Boolean))].sort();
   const [selectedOwner, setSelectedOwner] = useState("");
   const [completedOpen, setCompletedOpen] = useState(false);
