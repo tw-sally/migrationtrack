@@ -14,8 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 export default function MyTasks() {
   const { migrations, toggleTaskComplete } = useMigrationData();
-  const dbas = [...new Set(migrations.map(m => m.dba).filter(Boolean))].sort();
-  const [selectedDba, setSelectedDba] = useState(dbas[0] || "");
+  const taskOwners = [...new Set(migrations.map(m => m.task_owner).filter(Boolean))].sort();
+  const [selectedOwner, setSelectedOwner] = useState(taskOwners[0] || "");
   const [completedOpen, setCompletedOpen] = useState(false);
   const [noteInput, setNoteInput] = useState<Record<string, string>>({});
   const [allTasks, setAllTasks] = useState<MigrationTaskDB[]>([]);
