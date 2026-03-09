@@ -190,9 +190,16 @@ export function AddMigrationDialog({ open, onOpenChange }: Props) {
             </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-3">
-            <Label className="text-right text-sm">DBA *</Label>
+            <Label className="text-right text-sm">DB Owner *</Label>
             <Select value={dba} onValueChange={setDba}>
-              <SelectTrigger className="col-span-3"><SelectValue placeholder="Select DBA" /></SelectTrigger>
+              <SelectTrigger className="col-span-3"><SelectValue placeholder="Select DB Owner" /></SelectTrigger>
+              <SelectContent>{DBA_LIST.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-3">
+            <Label className="text-right text-sm">Task Owner *</Label>
+            <Select value={taskOwner} onValueChange={setTaskOwner}>
+              <SelectTrigger className="col-span-3"><SelectValue placeholder="Select Task Owner" /></SelectTrigger>
               <SelectContent>{DBA_LIST.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
             </Select>
           </div>
