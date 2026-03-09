@@ -41,6 +41,7 @@ export function AddMigrationDialog({ open, onOpenChange }: Props) {
   const [dbType, setDbType] = useState(DB_TYPES[0]);
   const [dbRole, setDbRole] = useState<"PROD" | "DEV/CAT">("PROD");
   const [dba, setDba] = useState("");
+  const [taskOwner, setTaskOwner] = useState("");
   const [apSponsor, setApSponsor] = useState("");
   const [apManager, setApManager] = useState("");
   const [dDay, setDDay] = useState<Date>();
@@ -92,14 +93,14 @@ export function AddMigrationDialog({ open, onOpenChange }: Props) {
 
   const resetForm = () => {
     setDbid(""); setPhase("BSID"); setDbType(DB_TYPES[0]); setDbRole("PROD");
-    setDba(""); setApSponsor(""); setApManager(""); setDDay(undefined); setTargetDb(""); setTemplateId("");
+    setDba(""); setTaskOwner(""); setApSponsor(""); setApManager(""); setDDay(undefined); setTargetDb(""); setTemplateId("");
     setSourceDbType(""); setMigrationStrategy("");
     setMilestoneDates({ "D-3M": "", "D-2M": "", "D-1M": "", "D-Day": "", "Post": "" });
   };
 
   const handleSave = async () => {
-    if (!dbid || !dba || !dDay || !templateId) {
-      toast.error("Please fill in required fields: DBID, DBA, D-Day, Task Template");
+    if (!dbid || !dba || !taskOwner || !dDay || !templateId) {
+      toast.error("Please fill in required fields: DBID, DB Owner, Task Owner, D-Day, Task Template");
       return;
     }
     if (dbRole === "DEV/CAT" && !sourceDbType) {
@@ -122,7 +123,7 @@ export function AddMigrationDialog({ open, onOpenChange }: Props) {
       d_minus_2m: milestoneDates["D-2M"],
       d_minus_1m: milestoneDates["D-1M"],
       dba,
-      task_owner: dba,
+      task_owner: taskOwner,
       ap_sponsor: apSponsor,
       ap_manager: apManager,
       migration_strategy: migrationStrategy || null,
@@ -189,9 +190,16 @@ export function AddMigrationDialog({ open, onOpenChange }: Props) {
             </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-3">
-            <Label className="text-right text-sm">DBA *</Label>
+            <Label className="text-right text-sm">DB Owner *</Label>
             <Select value={dba} onValueChange={setDba}>
-              <SelectTrigger className="col-span-3"><SelectValue placeholder="Select DBA" /></SelectTrigger>
+              <SelectTrigger className="col-span-3"><SelectValue placeholder="Select DB Owner" /></SelectTrigger>
+              <SelectContent>{DBA_LIST.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-3">
+            <Label className="text-right text-sm">Task Owner *</Label>
+            <Select value={taskOwner} onValueChange={setTaskOwner}>
+              <SelectTrigger className="col-span-3"><SelectValue placeholder="Select Task Owner" /></SelectTrigger>
               <SelectContent>{DBA_LIST.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
             </Select>
           </div>
