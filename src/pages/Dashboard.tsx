@@ -146,13 +146,17 @@ export default function Dashboard() {
         </Card>
       </div>
       <Card>
-        <CardHeader><CardTitle className="text-base">DBA Workload Distribution</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Task Owner Workload Distribution</CardTitle></CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={dbaData} layout="vertical">
+          <ResponsiveContainer width="100%" height={dbaChartHeight}>
+            <BarChart data={dbaData} layout="vertical" barSize={20}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 89%)" />
-              <XAxis type="number" tick={{ fontSize: 12 }} /><YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={90} /><Tooltip />
-              <Bar dataKey="value" name="DB Count" fill="hsl(215, 80%, 48%)" radius={[0, 4, 4, 0]} />
+              <XAxis type="number" tick={{ fontSize: 12 }} />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={110} />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="prod" name="PROD" stackId="a" fill="hsl(215, 80%, 48%)" radius={[0, 0, 0, 0]} label={{ position: "right", fontSize: 11, fill: "hsl(215, 80%, 48%)" }} />
+              <Bar dataKey="test" name="TEST" stackId="a" fill="hsl(220, 13%, 75%)" radius={[0, 4, 4, 0]} label={{ position: "right", fontSize: 11, fill: "hsl(220, 13%, 55%)" }} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
