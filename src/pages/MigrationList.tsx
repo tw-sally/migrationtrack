@@ -48,7 +48,7 @@ export default function MigrationList() {
   const { migrations, migrationsLoading, templates } = useMigrationData();
   const templateMap = useMemo(() => Object.fromEntries(templates.map(t => [t.id, t.name])), [templates]);
 
-  const dbas = [...new Set(migrations.map(m => m.dba).filter(Boolean))].sort();
+  const taskOwners = [...new Set(migrations.map(m => m.task_owner).filter(Boolean))].sort();
   const phases = [...new Set(migrations.map(m => m.phase).filter(Boolean))].sort();
   const dbids = [...new Set(migrations.map(m => m.dbid).filter(Boolean))].sort();
   const dbTypes = [...new Set(migrations.map(m => m.db_type).filter(Boolean))].sort();
@@ -68,7 +68,7 @@ export default function MigrationList() {
   const filtered = useMemo(() => {
     return migrationsWithStage.filter(m => {
       if (statusFilter !== "all" && m.overall_status !== statusFilter) return false;
-      if (dbaFilter !== "all" && m.dba !== dbaFilter) return false;
+      if (dbaFilter !== "all" && m.task_owner !== dbaFilter) return false;
       if (phaseFilter !== "all" && m.phase !== phaseFilter) return false;
       if (stageFilter !== "all" && m.stage !== stageFilter) return false;
       if (dbTypeFilter !== "all" && m.db_type !== dbTypeFilter) return false;
@@ -100,7 +100,7 @@ export default function MigrationList() {
         case "phase": cmp = a.phase.localeCompare(b.phase); break;
         case "dbType": cmp = a.db_type.localeCompare(b.db_type); break;
         case "dDay": cmp = a.migration_date.localeCompare(b.migration_date); break;
-        case "dba": cmp = a.dba.localeCompare(b.dba); break;
+        case "dba": cmp = a.task_owner.localeCompare(b.task_owner); break;
         case "apSponsor": cmp = a.ap_sponsor.localeCompare(b.ap_sponsor); break;
         case "stage": cmp = (stageOrder[a.stage] ?? 99) - (stageOrder[b.stage] ?? 99); break;
         case "progress": cmp = a.completion_percent - b.completion_percent; break;
@@ -227,10 +227,10 @@ export default function MigrationList() {
               </SelectContent>
             </Select>
             <Select value={dbaFilter} onValueChange={setDbaFilter}>
-              <SelectTrigger className="w-[140px]"><SelectValue placeholder="DBA" /></SelectTrigger>
+              <SelectTrigger className="w-[160px]"><SelectValue placeholder="Task Owner" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All DBA</SelectItem>
-                {dbas.map(dba => <SelectItem key={dba} value={dba}>{dba}</SelectItem>)}
+                <SelectItem value="all">All Task Owner</SelectItem>
+                {taskOwners.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -245,7 +245,7 @@ export default function MigrationList() {
                 <TableHead className="w-[50px] text-center">#</TableHead>
                 {([
                   ["DBID", "dbid"], ["Role", "role"], ["Phase", "phase"], ["DB Type", "dbType"], ["D-Day", "dDay"],
-                  ["DBA", "dba"], ["AP Sponsor", "apSponsor"], ["Stage", "stage"], ["Progress", "progress"], ["Status", "status"],
+                  ["Task Owner", "dba"], ["AP Sponsor", "apSponsor"], ["Stage", "stage"], ["Progress", "progress"], ["Status", "status"],
                 ] as [string, SortKey][]).map(([label, key]) => (
                   <TableHead key={key} className="cursor-pointer select-none hover:bg-muted/50" onClick={() => toggleSort(key)}>
                     <span className="flex items-center">{label}<SortIcon col={key} /></span>
@@ -264,7 +264,7 @@ export default function MigrationList() {
                   <TableCell><Badge variant="secondary" className="text-xs">{m.phase}</Badge></TableCell>
                   <TableCell className="text-sm text-muted-foreground">{m.db_type}</TableCell>
                   <TableCell className="font-mono text-sm">{m.migration_date}</TableCell>
-                  <TableCell className="font-medium text-sm">{m.dba}</TableCell>
+                  <TableCell className="font-medium text-sm">{m.task_owner}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{m.ap_sponsor}</TableCell>
                   <TableCell><Badge variant="outline" className={`text-xs ${stageColor[m.stage] || ""}`}>{m.stage}</Badge></TableCell>
                   <TableCell className="min-w-[150px]"><ProgressBar value={m.completion_percent} /></TableCell>
