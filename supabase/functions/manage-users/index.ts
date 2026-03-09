@@ -115,6 +115,20 @@ serve(async (req) => {
       });
     }
 
+    if (action === "update") {
+      const { user_id, display_name, windows_account } = params;
+      // Update user_metadata
+      const { error: metaErr } = await supabaseAdmin.auth.admin.updateUserById(user_id, {
+        user_metadata: { display_name, windows_account: windows_account || "" },
+      });
+      if (metaErr) throw metaErr;
+      // Update profile display_name
+      await supabaseAdmin.from("profiles").update({ display_name }).eq("id", user_id);
+      return new Response(JSON.stringify({ message: "User updated" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "delete") {
       const { user_id } = params;
       // Prevent deleting yourself
