@@ -355,6 +355,13 @@ export default function AccountManagement() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openEdit(u)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
                           {!u.roles.includes("admin") && (
                             <Button
                               variant={u.banned ? "outline" : "destructive"}
