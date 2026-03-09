@@ -24,6 +24,15 @@ type MilestonePhase = "D-3M" | "D-2M" | "D-1M" | "D-Day" | "Post";
 const milestoneOrder: MilestonePhase[] = ["D-3M", "D-2M", "D-1M", "D-Day", "Post"];
 const defaultOffsets: Record<MilestonePhase, number> = { "D-3M": -3, "D-2M": -2, "D-1M": -1, "D-Day": 0, "Post": 1 };
 
+// Templates with "Dev" or "CAT" in name only use D-1M, D-Day, Post
+function getTemplateMilestones(templateName: string): MilestonePhase[] {
+  const lower = templateName.toLowerCase();
+  if (lower.includes("dev") || lower.includes("cat")) {
+    return ["D-1M", "D-Day", "Post"];
+  }
+  return milestoneOrder;
+}
+
 // Local draft for editing a single task row
 interface TaskDraft {
   title: string;
