@@ -152,26 +152,62 @@ export default function TaskTemplates() {
             <AccordionContent>
               {/* Milestone Offset Settings */}
               <div className="mb-4 p-3 rounded-lg border border-border bg-muted/30">
-                <div className="flex items-center gap-2 mb-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Phase Start Date Offsets (months from D-Day)</span>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Phase Start Date Offsets (months from D-Day)</span>
+                  </div>
+                  {editingOffsetsTemplateId === tpl.id ? (
+                    <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={async () => {
+                      for (const milestone of milestoneOrder) {
+                        const val = offsetDraft[milestone];
+                        if (val !== undefined) {
+                          const saved = tpl.milestoneOffsets.find(o => o.milestone === milestone);
+                          const currentVal = saved ? saved.offset_months : defaultOffsets[milestone];
+                          if (val !== currentVal) await updateMilestoneOffset(tpl.id, milestone, val);
+                        }
+                      }
+                      setEditingOffsetsTemplateId(null);
+                      toast.success("Offsets saved");
+                    }}>
+                      <Save className="h-3 w-3" /> Save
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs text-muted-foreground" onClick={() => {
+                      const draft: Record<string, number> = {};
+                      milestoneOrder.forEach(m => {
+                        const saved = tpl.milestoneOffsets.find(o => o.milestone === m);
+                        draft[m] = saved ? saved.offset_months : defaultOffsets[m];
+                      });
+                      setOffsetDraft(draft);
+                      setEditingOffsetsTemplateId(tpl.id);
+                    }}>
+                      <Pencil className="h-3 w-3" /> Edit
+                    </Button>
+                  )}
                 </div>
                 <div className="grid grid-cols-5 gap-2">
                   {milestoneOrder.map(milestone => {
                     const saved = tpl.milestoneOffsets.find(o => o.milestone === milestone);
-                    const currentVal = saved ? saved.offset_months : defaultOffsets[milestone];
+                    const currentVal = editingOffsetsTemplateId === tpl.id
+                      ? (offsetDraft[milestone] ?? (saved ? saved.offset_months : defaultOffsets[milestone]))
+                      : (saved ? saved.offset_months : defaultOffsets[milestone]);
                     return (
                       <div key={milestone} className="flex flex-col items-center gap-1">
                         <span className="text-xs text-muted-foreground">{milestone}</span>
-                        <Input
-                          type="number"
-                          value={currentVal}
-                          onChange={e => {
-                            const val = parseInt(e.target.value);
-                            if (!isNaN(val)) updateMilestoneOffset(tpl.id, milestone, val);
-                          }}
-                          className="h-8 w-20 text-center text-sm"
-                        />
+                        {editingOffsetsTemplateId === tpl.id ? (
+                          <Input
+                            type="number"
+                            value={currentVal}
+                            onChange={e => {
+                              const val = parseInt(e.target.value);
+                              if (!isNaN(val)) setOffsetDraft(d => ({ ...d, [milestone]: val }));
+                            }}
+                            className="h-8 w-20 text-center text-sm"
+                          />
+                        ) : (
+                          <span className="h-8 w-20 flex items-center justify-center text-sm font-mono">{currentVal}</span>
+                        )}
                         <span className="text-[10px] text-muted-foreground">
                           {currentVal === 0 ? "D-Day" : currentVal > 0 ? `D+${currentVal}M` : `D${currentVal}M`}
                         </span>
