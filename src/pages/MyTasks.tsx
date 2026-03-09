@@ -74,7 +74,7 @@ export default function MyTasks() {
   const handleToggle = async (taskId: string) => {
     await toggleTaskComplete(taskId);
     // Refresh tasks
-    const { data } = await supabase.from("migration_tasks").select("*").eq("assignee", selectedDba).order("order");
+    const { data } = await supabase.from("migration_tasks").select("*").eq("assignee", selectedOwner).order("order");
     setAllTasks((data || []) as MigrationTaskDB[]);
   };
 
