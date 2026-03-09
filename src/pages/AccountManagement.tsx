@@ -38,7 +38,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Users, Shield, UserIcon, CheckCircle, Ban, Loader2, Trash2 } from "lucide-react";
+import { Plus, Users, Shield, UserIcon, CheckCircle, Ban, Loader2, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
