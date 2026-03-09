@@ -48,7 +48,8 @@ export default function MigrationList() {
   const { migrations, migrationsLoading, templates } = useMigrationData();
   const templateMap = useMemo(() => Object.fromEntries(templates.map(t => [t.id, t.name])), [templates]);
 
-  const taskOwners = [...new Set(migrations.map(m => m.task_owner Set(migrations.map(m => m.phase).filter(Boolean))].sort();
+  const taskOwners = [...new Set(migrations.map(m => m.task_owner).filter(Boolean))].sort();
+  const phases = [...new Set(migrations.map(m => m.phase).filter(Boolean))].sort();
   const dbids = [...new Set(migrations.map(m => m.dbid).filter(Boolean))].sort();
   const dbTypes = [...new Set(migrations.map(m => m.db_type).filter(Boolean))].sort();
   
