@@ -149,28 +149,6 @@ export default function MigrationList() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-wrap gap-3">
-            <Select value={prodTestFilter} onValueChange={setProdTestFilter}>
-              <SelectTrigger className="w-[180px]"><SelectValue placeholder="DB Role" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All DB Role</SelectItem>
-                <SelectItem value="PROD">PROD</SelectItem>
-                <SelectItem value="TEST">TEST</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={stageFilter} onValueChange={setStageFilter}>
-              <SelectTrigger className="w-[130px]"><SelectValue placeholder="Stage" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Stage</SelectItem>
-                {stages.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={phaseFilter} onValueChange={setPhaseFilter}>
-              <SelectTrigger className="w-[130px]"><SelectValue placeholder="Phase" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Phase</SelectItem>
-                {phases.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-              </SelectContent>
-            </Select>
             <Popover open={dbidPopoverOpen} onOpenChange={setDbidPopoverOpen}>
               <PopoverTrigger asChild>
                 <Button variant="outline" role="combobox" className="w-[200px] justify-between font-normal">
@@ -202,6 +180,21 @@ export default function MigrationList() {
                 )}
               </PopoverContent>
             </Popover>
+            <Select value={prodTestFilter} onValueChange={setProdTestFilter}>
+              <SelectTrigger className="w-[180px]"><SelectValue placeholder="DB Role" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All DB Role</SelectItem>
+                <SelectItem value="PROD">PROD</SelectItem>
+                <SelectItem value="TEST">TEST</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={phaseFilter} onValueChange={setPhaseFilter}>
+              <SelectTrigger className="w-[130px]"><SelectValue placeholder="Phase" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Phase</SelectItem>
+                {phases.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+              </SelectContent>
+            </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[140px]"><SelectValue placeholder="Status" /></SelectTrigger>
               <SelectContent>
@@ -224,6 +217,13 @@ export default function MigrationList() {
               <SelectContent>
                 <SelectItem value="all">Migration Month</SelectItem>
                 {months.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={stageFilter} onValueChange={setStageFilter}>
+              <SelectTrigger className="w-[130px]"><SelectValue placeholder="Stage" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Stage</SelectItem>
+                {stages.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={dbaFilter} onValueChange={setDbaFilter}>
