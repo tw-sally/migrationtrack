@@ -46,6 +46,8 @@ export default function TaskTemplates() {
   // Track which task is being edited + its local draft
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [draft, setDraft] = useState<TaskDraft>({ title: "", input_type: "manual", remarks: "" });
+  const [editingOffsetsTemplateId, setEditingOffsetsTemplateId] = useState<string | null>(null);
+  const [offsetDraft, setOffsetDraft] = useState<Record<string, number>>({});
 
   const startEditing = (task: TemplateTaskDB) => {
     setEditingTaskId(task.id);
