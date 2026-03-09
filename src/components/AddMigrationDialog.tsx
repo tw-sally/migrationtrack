@@ -123,7 +123,7 @@ export function AddMigrationDialog({ open, onOpenChange }: Props) {
       d_minus_2m: milestoneDates["D-2M"],
       d_minus_1m: milestoneDates["D-1M"],
       dba,
-      task_owner: dba,
+      task_owner: taskOwner,
       ap_sponsor: apSponsor,
       ap_manager: apManager,
       migration_strategy: migrationStrategy || null,
