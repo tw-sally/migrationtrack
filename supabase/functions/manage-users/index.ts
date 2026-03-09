@@ -3,10 +3,11 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -26,7 +27,9 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: { user: caller } } = await anonClient.auth.getUser();
+    const {
+      data: { user: caller },
+    } = await anonClient.auth.getUser();
     if (!caller) throw new Error("Unauthorized");
 
     const { data: hasAdmin } = await supabaseAdmin.rpc("has_role", {
@@ -35,10 +38,16 @@ serve(async (req) => {
     });
     if (!hasAdmin) throw new Error("Admin access required");
 
-    const { action, ...params } = await req.json();
+    const body = await req.json();
+    const action = body.action;
+    const params = body;
 
+    // --- LIST ---
     if (action === "list") {
-      const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
+      const {
+        data: { users },
+        error,
+      } = await supabaseAdmin.auth.admin.listUsers();
       if (error) throw error;
 
       const { data: allRoles } = await supabaseAdmin
@@ -49,16 +58,19 @@ serve(async (req) => {
         .from("profiles")
         .select("id, display_name");
 
-      const enriched = users.map((u) => {
-        const roles = allRoles?.filter((r) => r.user_id === u.id).map((r) => r.role) || [];
-        const profile = allProfiles?.find((p) => p.id === u.id);
+      const enriched = users.map((u: any) => {
+        const roles =
+          allRoles?.filter((r: any) => r.user_id === u.id).map((r: any) => r.role) || [];
+        const profile = allProfiles?.find((p: any) => p.id === u.id);
         return {
           id: u.id,
           email: u.email,
           display_name: profile?.display_name || u.email,
           windows_account: u.user_metadata?.windows_account || "",
           roles,
-          banned: u.banned_until ? new Date(u.banned_until) > new Date() : false,
+          banned: u.banned_until
+            ? new Date(u.banned_until) > new Date()
+            : false,
           created_at: u.created_at,
         };
       });
@@ -68,31 +80,34 @@ serve(async (req) => {
       });
     }
 
+    // --- CREATE ---
     if (action === "create") {
       const { email, password, display_name, role, windows_account } = params;
-      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: {
-          display_name: display_name || email,
-          windows_account: windows_account || "",
-        },
-      });
+      const { data: newUser, error: createError } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: {
+            display_name: display_name || email,
+            windows_account: windows_account || "",
+          },
+        });
       if (createError) throw createError;
 
       if (role) {
-        await supabaseAdmin.from("user_roles").insert({
-          user_id: newUser.user.id,
-          role,
-        });
+        await supabaseAdmin
+          .from("user_roles")
+          .insert({ user_id: newUser.user.id, role });
       }
 
-      return new Response(JSON.stringify({ message: "User created", id: newUser.user.id }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ message: "User created", id: newUser.user.id }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
+    // --- UPDATE ROLE ---
     if (action === "update_role") {
       const { user_id, role } = params;
       await supabaseAdmin.from("user_roles").delete().eq("user_id", user_id);
@@ -104,20 +119,26 @@ serve(async (req) => {
       });
     }
 
+    // --- TOGGLE BAN ---
     if (action === "toggle_ban") {
       const { user_id, ban } = params;
-      const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, {
-        ban_duration: ban ? "876000h" : "none",
-      });
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(
+        user_id,
+        { ban_duration: ban ? "876000h" : "none" }
+      );
       if (error) throw error;
-      return new Response(JSON.stringify({ message: ban ? "User banned" : "User unbanned" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ message: ban ? "User banned" : "User unbanned" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
+    // --- BATCH SET WINDOWS ACCOUNT ---
     if (action === "batch_set_windows_account") {
-      // Set windows_account = display_name for all users that don't have one
-      const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
+      const {
+        data: { users },
+        error,
+      } = await supabaseAdmin.auth.admin.listUsers();
       if (error) throw error;
       let updated = 0;
       for (const u of users) {
@@ -130,28 +151,32 @@ serve(async (req) => {
           updated++;
         }
       }
-      return new Response(JSON.stringify({ message: `Updated ${updated} users` }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ message: `Updated ${updated} users` }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
+    // --- UPDATE USER ---
     if (action === "update") {
       const { user_id, display_name, windows_account } = params;
-      // Update user_metadata
-      const { error: metaErr } = await supabaseAdmin.auth.admin.updateUserById(user_id, {
-        user_metadata: { display_name, windows_account: windows_account || "" },
-      });
+      const { error: metaErr } =
+        await supabaseAdmin.auth.admin.updateUserById(user_id, {
+          user_metadata: { display_name, windows_account: windows_account || "" },
+        });
       if (metaErr) throw metaErr;
-      // Update profile display_name
-      await supabaseAdmin.from("profiles").update({ display_name }).eq("id", user_id);
+      await supabaseAdmin
+        .from("profiles")
+        .update({ display_name })
+        .eq("id", user_id);
       return new Response(JSON.stringify({ message: "User updated" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    // --- DELETE ---
     if (action === "delete") {
       const { user_id } = params;
-      // Prevent deleting yourself
       if (user_id === caller.id) throw new Error("Cannot delete yourself");
       const { error } = await supabaseAdmin.auth.admin.deleteUser(user_id);
       if (error) throw error;
@@ -161,7 +186,7 @@ serve(async (req) => {
     }
 
     throw new Error("Unknown action: " + action);
-  } catch (error) {
+  } catch (error: any) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
