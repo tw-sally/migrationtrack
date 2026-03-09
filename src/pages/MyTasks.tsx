@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMigrationData, MigrationTaskDB } from "@/contexts/MigrationContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -14,8 +15,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 export default function MyTasks() {
   const { migrations, toggleTaskComplete } = useMigrationData();
+  const { windowsAccount } = useAuth();
   const taskOwners = [...new Set(migrations.map(m => m.task_owner).filter(Boolean))].sort();
-  const [selectedOwner, setSelectedOwner] = useState(taskOwners[0] || "");
+  const [selectedOwner, setSelectedOwner] = useState("");
   const [completedOpen, setCompletedOpen] = useState(false);
   const [noteInput, setNoteInput] = useState<Record<string, string>>({});
   const [allTasks, setAllTasks] = useState<MigrationTaskDB[]>([]);
