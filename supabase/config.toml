@@ -11,3 +11,12 @@ verify_jwt = false
 
 [functions.bulk-update-task-status]
 verify_jwt = false
+
+[functions.cleanup-devcat-phases]
+verify_jwt = false
+
+[functions.manage-users]
+verify_jwt = false
+
+[functions.seed-admin]
+verify_jwt = false
