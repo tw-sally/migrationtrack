@@ -12,7 +12,6 @@ serve(async (req) => {
   }
 
   try {
-    // Verify caller is admin
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Missing authorization");
 
@@ -30,7 +29,6 @@ serve(async (req) => {
     const { data: { user: caller } } = await anonClient.auth.getUser();
     if (!caller) throw new Error("Unauthorized");
 
-    // Check admin role
     const { data: hasAdmin } = await supabaseAdmin.rpc("has_role", {
       _user_id: caller.id,
       _role: "admin",
@@ -43,12 +41,10 @@ serve(async (req) => {
       const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
       if (error) throw error;
 
-      // Get roles for all users
       const { data: allRoles } = await supabaseAdmin
         .from("user_roles")
         .select("user_id, role");
 
-      // Get profiles
       const { data: allProfiles } = await supabaseAdmin
         .from("profiles")
         .select("id, display_name");
@@ -60,6 +56,7 @@ serve(async (req) => {
           id: u.id,
           email: u.email,
           display_name: profile?.display_name || u.email,
+          windows_account: u.user_metadata?.windows_account || "",
           roles,
           banned: u.banned_until ? new Date(u.banned_until) > new Date() : false,
           created_at: u.created_at,
@@ -72,16 +69,18 @@ serve(async (req) => {
     }
 
     if (action === "create") {
-      const { email, password, display_name, role } = params;
+      const { email, password, display_name, role, windows_account } = params;
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
         email_confirm: true,
-        user_metadata: { display_name: display_name || email },
+        user_metadata: {
+          display_name: display_name || email,
+          windows_account: windows_account || "",
+        },
       });
       if (createError) throw createError;
 
-      // Assign role
       if (role) {
         await supabaseAdmin.from("user_roles").insert({
           user_id: newUser.user.id,
@@ -96,7 +95,6 @@ serve(async (req) => {
 
     if (action === "update_role") {
       const { user_id, role } = params;
-      // Remove existing roles, set new one
       await supabaseAdmin.from("user_roles").delete().eq("user_id", user_id);
       if (role) {
         await supabaseAdmin.from("user_roles").insert({ user_id, role });
@@ -113,6 +111,17 @@ serve(async (req) => {
       });
       if (error) throw error;
       return new Response(JSON.stringify({ message: ban ? "User banned" : "User unbanned" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "delete") {
+      const { user_id } = params;
+      // Prevent deleting yourself
+      if (user_id === caller.id) throw new Error("Cannot delete yourself");
+      const { error } = await supabaseAdmin.auth.admin.deleteUser(user_id);
+      if (error) throw error;
+      return new Response(JSON.stringify({ message: "User deleted" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
