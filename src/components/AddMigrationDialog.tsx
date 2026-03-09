@@ -41,6 +41,7 @@ export function AddMigrationDialog({ open, onOpenChange }: Props) {
   const [dbType, setDbType] = useState(DB_TYPES[0]);
   const [dbRole, setDbRole] = useState<"PROD" | "DEV/CAT">("PROD");
   const [dba, setDba] = useState("");
+  const [taskOwner, setTaskOwner] = useState("");
   const [apSponsor, setApSponsor] = useState("");
   const [apManager, setApManager] = useState("");
   const [dDay, setDDay] = useState<Date>();
