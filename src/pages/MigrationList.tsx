@@ -264,7 +264,7 @@ export default function MigrationList() {
                   <TableCell><Badge variant="secondary" className="text-xs">{m.phase}</Badge></TableCell>
                   <TableCell className="text-sm text-muted-foreground">{m.db_type}</TableCell>
                   <TableCell className="font-mono text-sm">{m.migration_date}</TableCell>
-                  <TableCell className="font-medium text-sm">{m.dba}</TableCell>
+                  <TableCell className="font-medium text-sm">{m.task_owner}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{m.ap_sponsor}</TableCell>
                   <TableCell><Badge variant="outline" className={`text-xs ${stageColor[m.stage] || ""}`}>{m.stage}</Badge></TableCell>
                   <TableCell className="min-w-[150px]"><ProgressBar value={m.completion_percent} /></TableCell>
