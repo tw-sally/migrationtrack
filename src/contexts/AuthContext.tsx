@@ -7,6 +7,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   displayName: string;
+  windowsAccount: string;
   roles: string[];
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -68,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, displayName, roles, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, displayName, windowsAccount: user?.user_metadata?.windows_account || "", roles, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
