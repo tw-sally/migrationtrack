@@ -193,12 +193,12 @@ export default function MigrationDetail() {
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto pb-2">
-        {milestoneOrder.map((ms, i) => (
+        {activeMilestones.map((ms, i) => (
           <div key={ms} className="flex items-center">
             <div className={`px-3 py-1.5 rounded-full text-xs font-medium ${milestoneColors[ms]}`}>
               {ms} {getMilestoneDate(ms) && `(${getMilestoneDate(ms)})`}
             </div>
-            {i < milestoneOrder.length - 1 && <div className="w-8 h-px bg-border mx-1" />}
+            {i < activeMilestones.length - 1 && <div className="w-8 h-px bg-border mx-1" />}
           </div>
         ))}
       </div>
