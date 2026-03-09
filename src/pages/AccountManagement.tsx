@@ -76,6 +76,10 @@ export default function AccountManagement() {
   const [newDisplayName, setNewDisplayName] = useState("");
   const [newRole, setNewRole] = useState("user");
   const [deleteTarget, setDeleteTarget] = useState<ManagedUser | null>(null);
+  const [editTarget, setEditTarget] = useState<ManagedUser | null>(null);
+  const [editDisplayName, setEditDisplayName] = useState("");
+  const [editWindowsAccount, setEditWindowsAccount] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const isAdmin = roles.includes("admin");
 
