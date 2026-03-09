@@ -183,8 +183,9 @@ export default function TaskTemplates() {
                     </Button>
                   ) : (
                     <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs text-muted-foreground" onClick={() => {
-                      const draft: Record<string, number> = {};
-                      milestoneOrder.forEach(m => {
+                    const draft: Record<string, number> = {};
+                      const tplMilestones = getTemplateMilestones(tpl.name);
+                      tplMilestones.forEach(m => {
                         const saved = tpl.milestoneOffsets.find(o => o.milestone === m);
                         draft[m] = saved ? saved.offset_months : defaultOffsets[m];
                       });
