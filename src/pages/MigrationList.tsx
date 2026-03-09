@@ -48,7 +48,7 @@ export default function MigrationList() {
   const { migrations, migrationsLoading, templates } = useMigrationData();
   const templateMap = useMemo(() => Object.fromEntries(templates.map(t => [t.id, t.name])), [templates]);
 
-  const taskOwners = [...new Set(migrations.map(m => m.task_owner).filter(Boolean))].sort();
+  const taskOwners = [...new Set(migrations.map(m => m.task_owner m.task_owner).filter(Boolean))].sort();
   const phases = [...new Set(migrations.map(m => m.phase).filter(Boolean))].sort();
   const dbids = [...new Set(migrations.map(m => m.dbid).filter(Boolean))].sort();
   const dbTypes = [...new Set(migrations.map(m => m.db_type).filter(Boolean))].sort();
@@ -68,7 +68,7 @@ export default function MigrationList() {
   const filtered = useMemo(() => {
     return migrationsWithStage.filter(m => {
       if (statusFilter !== "all" && m.overall_status !== statusFilter) return false;
-      if (dbaFilter !== "all" && m.dba !== dbaFilter) return false;
+      if (dbaFilter !=task_ownerall" && m.dba !== dbaFilter) return false;
       if (phaseFilter !== "all" && m.phase !== phaseFilter) return false;
       if (stageFilter !== "all" && m.stage !== stageFilter) return false;
       if (dbTypeFilter !== "all" && m.db_type !== dbTypeFilter) return false;
