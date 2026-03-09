@@ -68,7 +68,8 @@ export default function MigrationList() {
   const filtered = useMemo(() => {
     return migrationsWithStage.filter(m => {
       if (statusFilter !== "all" && m.overall_status !== statusFilter) return false;
-      if task_owneraFilter !=task_o(dbaFilter !== "all" && m.(dbaFilter !== "all" && m.task_ownerl" && m.phase !== phaseFilter) return false;
+      if (dbaFilter !== "all" && m.task_owner !== dbaFilter) return false;
+      if (phaseFilter !== "all" && m.phase !== phaseFilter) return false;
       if (stageFilter !== "all" && m.stage !== stageFilter) return false;
       if (dbTypeFilter !== "all" && m.db_type !== dbTypeFilter) return false;
       if (dbidFilter.length > 0 && !dbidFilter.includes(m.dbid)) return false;
