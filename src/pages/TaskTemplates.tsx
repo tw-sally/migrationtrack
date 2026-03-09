@@ -168,7 +168,7 @@ export default function TaskTemplates() {
                   </div>
                   {editingOffsetsTemplateId === tpl.id ? (
                     <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={async () => {
-                      for (const milestone of milestoneOrder) {
+                    for (const milestone of getTemplateMilestones(tpl.name)) {
                         const val = offsetDraft[milestone];
                         if (val !== undefined) {
                           const saved = tpl.milestoneOffsets.find(o => o.milestone === milestone);
