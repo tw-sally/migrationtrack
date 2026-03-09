@@ -206,11 +206,13 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {filtered.filter(m => m.overall_status === "delayed").map(m => (
+            {delayedMigrations.map(m => (
               <div key={m.id} className="flex items-center justify-between p-3 rounded-lg bg-delay/5 border border-delay/20">
                 <div>
-                  <p className="font-medium font-mono text-sm">{m.dbid}</p>
-                  <p className="text-xs text-muted-foreground">DBA: {m.dba} | D-Day: {m.migration_date}</p>
+                  <p className="font-medium font-mono text-sm">
+                    <span className={m.prod_or_test === "PROD" ? "text-blue-600" : "text-foreground"}>{m.prod_or_test}:{m.dbid}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">Task Owner: {m.task_owner} | D-Day: {m.migration_date}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <ProgressBar value={m.completion_percent} className="w-32" />
@@ -218,7 +220,7 @@ export default function Dashboard() {
                 </div>
               </div>
             ))}
-            {filtered.filter(m => m.overall_status === "delayed").length === 0 && (
+            {delayedMigrations.length === 0 && (
               <p className="text-sm text-muted-foreground">No delayed migrations 🎉</p>
             )}
           </div>
