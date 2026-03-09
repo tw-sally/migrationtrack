@@ -408,6 +408,32 @@ export default function AccountManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>編輯帳號</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label>Windows Account</Label>
+              <Input value={editWindowsAccount} onChange={(e) => setEditWindowsAccount(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>顯示名稱</Label>
+              <Input value={editDisplayName} onChange={(e) => setEditDisplayName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input value={editTarget?.email || ""} disabled className="opacity-60" />
+            </div>
+            <Button onClick={handleUpdate} disabled={saving} className="w-full">
+              {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              儲存
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
