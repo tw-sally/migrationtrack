@@ -164,6 +164,31 @@ export default function AccountManagement() {
     }
   };
 
+  const openEdit = (u: ManagedUser) => {
+    setEditTarget(u);
+    setEditDisplayName(u.display_name);
+    setEditWindowsAccount(u.windows_account || "");
+  };
+
+  const handleUpdate = async () => {
+    if (!editTarget) return;
+    setSaving(true);
+    try {
+      await callManageUsers("update", {
+        user_id: editTarget.id,
+        display_name: editDisplayName,
+        windows_account: editWindowsAccount,
+      });
+      toast.success("帳號已更新");
+      setEditTarget(null);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error("更新失敗: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleBatchCreateDBAs = async () => {
     const existingWindows = users.map(u => u.windows_account?.toUpperCase());
     const toCreate = DBA_LIST.filter(d => !existingWindows.includes(d.toUpperCase()));
