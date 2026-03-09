@@ -38,7 +38,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Users, Shield, UserIcon, CheckCircle, Ban, Loader2, Trash2 } from "lucide-react";
+import { Plus, Users, Shield, UserIcon, CheckCircle, Ban, Loader2, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -76,6 +76,10 @@ export default function AccountManagement() {
   const [newDisplayName, setNewDisplayName] = useState("");
   const [newRole, setNewRole] = useState("user");
   const [deleteTarget, setDeleteTarget] = useState<ManagedUser | null>(null);
+  const [editTarget, setEditTarget] = useState<ManagedUser | null>(null);
+  const [editDisplayName, setEditDisplayName] = useState("");
+  const [editWindowsAccount, setEditWindowsAccount] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const isAdmin = roles.includes("admin");
 
@@ -160,9 +164,34 @@ export default function AccountManagement() {
     }
   };
 
+  const openEdit = (u: ManagedUser) => {
+    setEditTarget(u);
+    setEditDisplayName(u.display_name);
+    setEditWindowsAccount(u.windows_account || "");
+  };
+
+  const handleUpdate = async () => {
+    if (!editTarget) return;
+    setSaving(true);
+    try {
+      await callManageUsers("update", {
+        user_id: editTarget.id,
+        display_name: editDisplayName,
+        windows_account: editWindowsAccount,
+      });
+      toast.success("帳號已更新");
+      setEditTarget(null);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error("更新失敗: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleBatchCreateDBAs = async () => {
-    const existingWindows = users.map(u => u.windows_account?.toUpperCase());
-    const toCreate = DBA_LIST.filter(d => !existingWindows.includes(d.toUpperCase()));
+    const existingKeys = users.map(u => (u.windows_account || u.display_name || "").toUpperCase());
+    const toCreate = DBA_LIST.filter(d => !existingKeys.includes(d.toUpperCase()));
     if (toCreate.length === 0) {
       toast.info("所有 DBA 帳號已存在");
       return;
@@ -326,6 +355,13 @@ export default function AccountManagement() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openEdit(u)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
                           {!u.roles.includes("admin") && (
                             <Button
                               variant={u.banned ? "outline" : "destructive"}
@@ -372,6 +408,32 @@ export default function AccountManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>編輯帳號</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label>Windows Account</Label>
+              <Input value={editWindowsAccount} onChange={(e) => setEditWindowsAccount(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>顯示名稱</Label>
+              <Input value={editDisplayName} onChange={(e) => setEditDisplayName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input value={editTarget?.email || ""} disabled className="opacity-60" />
+            </div>
+            <Button onClick={handleUpdate} disabled={saving} className="w-full">
+              {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              儲存
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
