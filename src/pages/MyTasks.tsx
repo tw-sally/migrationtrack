@@ -24,16 +24,16 @@ export default function MyTasks() {
 
   // Fetch all tasks for the selected DBA
   useEffect(() => {
-    if (!selectedDba) return;
+    if (!selectedOwner) return;
     setLoading(true);
-    supabase.from("migration_tasks").select("*").eq("assignee", selectedDba).order("order")
+    supabase.from("migration_tasks").select("*").eq("assignee", selectedOwner).order("order")
       .then(({ data }) => {
         setAllTasks((data || []) as MigrationTaskDB[]);
         setLoading(false);
       });
-  }, [selectedDba]);
+  }, [selectedOwner]);
 
-  const myMigrations = migrations.filter(m => m.dba === selectedDba).sort((a, b) => a.migration_date.localeCompare(b.migration_date));
+  const myMigrations = migrations.filter(m => m.task_owner === selectedOwner).sort((a, b) => a.migration_date.localeCompare(b.migration_date));
   const delayed = myMigrations.filter(m => m.overall_status === "delayed");
   const inProgress = myMigrations.filter(m => m.overall_status === "in_progress");
   const upcoming = myMigrations.filter(m => m.overall_status === "not_started");
