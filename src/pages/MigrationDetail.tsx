@@ -34,11 +34,21 @@ export default function MigrationDetail() {
   // Local status overrides (not yet saved)
   const [localStatusOverrides, setLocalStatusOverrides] = useState<Record<string, { status: string; completed_at: string | null }>>({});
 
-  const templateName = useMemo(() => {
-    if (!migration?.template_id) return "—";
-    const tpl = templates.find(t => t.id === migration.template_id);
-    return tpl?.name || "—";
+  const template = useMemo(() => {
+    if (!migration?.template_id) return null;
+    return templates.find(t => t.id === migration.template_id) || null;
   }, [templates, migration?.template_id]);
+
+  const templateName = template?.name || "—";
+
+  // Dev/CAT templates only use D-1M, D-Day, Post
+  const activeMilestones = useMemo(() => {
+    const name = templateName.toLowerCase();
+    if (name.includes("dev") || name.includes("cat")) {
+      return milestoneOrder.filter(m => m !== "D-3M" && m !== "D-2M");
+    }
+    return milestoneOrder;
+  }, [templateName]);
 
   useEffect(() => {
     if (id) {
@@ -55,7 +65,7 @@ export default function MigrationDetail() {
   }
 
   const tasks = migrationTasks.filter(t => t.migration_id === id);
-  const milestones = milestoneOrder;
+  const milestones = activeMilestones;
 
   const getMilestoneDate = (ms: MilestonePhase) => {
     switch (ms) {
@@ -183,12 +193,12 @@ export default function MigrationDetail() {
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto pb-2">
-        {milestoneOrder.map((ms, i) => (
+        {activeMilestones.map((ms, i) => (
           <div key={ms} className="flex items-center">
             <div className={`px-3 py-1.5 rounded-full text-xs font-medium ${milestoneColors[ms]}`}>
               {ms} {getMilestoneDate(ms) && `(${getMilestoneDate(ms)})`}
             </div>
-            {i < milestoneOrder.length - 1 && <div className="w-8 h-px bg-border mx-1" />}
+            {i < activeMilestones.length - 1 && <div className="w-8 h-px bg-border mx-1" />}
           </div>
         ))}
       </div>
