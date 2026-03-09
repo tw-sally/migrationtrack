@@ -93,7 +93,7 @@ export function AddMigrationDialog({ open, onOpenChange }: Props) {
 
   const resetForm = () => {
     setDbid(""); setPhase("BSID"); setDbType(DB_TYPES[0]); setDbRole("PROD");
-    setDba(""); setApSponsor(""); setApManager(""); setDDay(undefined); setTargetDb(""); setTemplateId("");
+    setDba(""); setTaskOwner(""); setApSponsor(""); setApManager(""); setDDay(undefined); setTargetDb(""); setTemplateId("");
     setSourceDbType(""); setMigrationStrategy("");
     setMilestoneDates({ "D-3M": "", "D-2M": "", "D-1M": "", "D-Day": "", "Post": "" });
   };
