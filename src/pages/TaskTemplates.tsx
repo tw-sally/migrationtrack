@@ -196,8 +196,8 @@ export default function TaskTemplates() {
                     </Button>
                   )}
                 </div>
-                <div className="grid grid-cols-5 gap-2">
-                  {milestoneOrder.map(milestone => {
+                <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${getTemplateMilestones(tpl.name).length}, 1fr)` }}>
+                  {getTemplateMilestones(tpl.name).map(milestone => {
                     const saved = tpl.milestoneOffsets.find(o => o.milestone === milestone);
                     const currentVal = editingOffsetsTemplateId === tpl.id
                       ? (offsetDraft[milestone] ?? (saved ? saved.offset_months : defaultOffsets[milestone]))
