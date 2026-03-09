@@ -112,7 +112,7 @@ export default function TaskTemplates() {
         </Button>
       </div>
 
-      <Accordion type="multiple" defaultValue={[templates[0]?.id]} className="space-y-3">
+      <Accordion type="multiple" defaultValue={[]} className="space-y-3">
         {[...templates].sort((a, b) => {
           // Put "DBVM" templates first, "Standard PROD" after
           const aIsDBVM = a.name.toLowerCase().includes("dbvm");
