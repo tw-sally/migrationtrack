@@ -43,9 +43,9 @@ export default function Dashboard() {
   });
   const monthlyData = Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month));
 
-  const byDBA: Record<string, number> = {};
-  filtered.forEach(m => { byDBA[m.dba] = (byDBA[m.dba] || 0) + 1; });
-  const dbaData = Object.entries(byDBA).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+  const byTaskOwner: Record<string, number> = {};
+  filtered.forEach(m => { byTaskOwner[m.task_owner] = (byTaskOwner[m.task_owner] || 0) + 1; });
+  const dbaData = Object.entries(byTaskOwner).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
 
   const statusData = [
     { name: "Completed", value: completed }, { name: "In Progress", value: inProgress },
