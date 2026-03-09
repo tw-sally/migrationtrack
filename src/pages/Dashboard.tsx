@@ -43,9 +43,16 @@ export default function Dashboard() {
   });
   const monthlyData = Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month));
 
-  const byTaskOwner: Record<string, number> = {};
-  filtered.forEach(m => { byTaskOwner[m.task_owner] = (byTaskOwner[m.task_owner] || 0) + 1; });
-  const dbaData = Object.entries(byTaskOwner).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+  const byTaskOwner: Record<string, { prod: number; test: number }> = {};
+  filtered.forEach(m => {
+    if (!byTaskOwner[m.task_owner]) byTaskOwner[m.task_owner] = { prod: 0, test: 0 };
+    if (m.prod_or_test === "PROD") byTaskOwner[m.task_owner].prod++;
+    else byTaskOwner[m.task_owner].test++;
+  });
+  const dbaData = Object.entries(byTaskOwner)
+    .map(([name, v]) => ({ name, prod: v.prod, test: v.test, total: v.prod + v.test }))
+    .sort((a, b) => b.total - a.total);
+  const dbaChartHeight = Math.max(250, dbaData.length * 40);
 
   const statusData = [
     { name: "Completed", value: completed }, { name: "In Progress", value: inProgress },
