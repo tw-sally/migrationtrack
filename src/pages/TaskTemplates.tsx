@@ -24,6 +24,15 @@ type MilestonePhase = "D-3M" | "D-2M" | "D-1M" | "D-Day" | "Post";
 const milestoneOrder: MilestonePhase[] = ["D-3M", "D-2M", "D-1M", "D-Day", "Post"];
 const defaultOffsets: Record<MilestonePhase, number> = { "D-3M": -3, "D-2M": -2, "D-1M": -1, "D-Day": 0, "Post": 1 };
 
+// Templates with "Dev" or "CAT" in name only use D-1M, D-Day, Post
+function getTemplateMilestones(templateName: string): MilestonePhase[] {
+  const lower = templateName.toLowerCase();
+  if (lower.includes("dev") || lower.includes("cat")) {
+    return ["D-1M", "D-Day", "Post"];
+  }
+  return milestoneOrder;
+}
+
 // Local draft for editing a single task row
 interface TaskDraft {
   title: string;
@@ -159,7 +168,7 @@ export default function TaskTemplates() {
                   </div>
                   {editingOffsetsTemplateId === tpl.id ? (
                     <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={async () => {
-                      for (const milestone of milestoneOrder) {
+                    for (const milestone of getTemplateMilestones(tpl.name)) {
                         const val = offsetDraft[milestone];
                         if (val !== undefined) {
                           const saved = tpl.milestoneOffsets.find(o => o.milestone === milestone);
@@ -174,8 +183,9 @@ export default function TaskTemplates() {
                     </Button>
                   ) : (
                     <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs text-muted-foreground" onClick={() => {
-                      const draft: Record<string, number> = {};
-                      milestoneOrder.forEach(m => {
+                    const draft: Record<string, number> = {};
+                      const tplMilestones = getTemplateMilestones(tpl.name);
+                      tplMilestones.forEach(m => {
                         const saved = tpl.milestoneOffsets.find(o => o.milestone === m);
                         draft[m] = saved ? saved.offset_months : defaultOffsets[m];
                       });
@@ -186,8 +196,8 @@ export default function TaskTemplates() {
                     </Button>
                   )}
                 </div>
-                <div className="grid grid-cols-5 gap-2">
-                  {milestoneOrder.map(milestone => {
+                <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${getTemplateMilestones(tpl.name).length}, 1fr)` }}>
+                  {getTemplateMilestones(tpl.name).map(milestone => {
                     const saved = tpl.milestoneOffsets.find(o => o.milestone === milestone);
                     const currentVal = editingOffsetsTemplateId === tpl.id
                       ? (offsetDraft[milestone] ?? (saved ? saved.offset_months : defaultOffsets[milestone]))
@@ -218,7 +228,7 @@ export default function TaskTemplates() {
               </div>
 
               <div className="space-y-6">
-                {milestoneOrder.map(milestone => {
+                {getTemplateMilestones(tpl.name).map(milestone => {
                   const milestoneTasks = tpl.tasks.filter(t => t.milestone === milestone).sort((a, b) => a.order - b.order);
                   return (
                     <div key={milestone}>
