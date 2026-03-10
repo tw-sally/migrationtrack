@@ -44,7 +44,9 @@ export default function MyTasks() {
       });
   }, [selectedOwner]);
 
-  const myMigrations = migrations.filter(m => m.task_owner === selectedOwner).sort((a, b) => a.migration_date.localeCompare(b.migration_date));
+  const myMigrations = migrations.filter(m => m.task_owner === selectedOwner && m.overall_status !== "completed").sort((a, b) => a.migration_date.localeCompare(b.migration_date));
+  const prodMigrations = myMigrations.filter(m => m.prod_or_test === "PROD");
+  const testMigrations = myMigrations.filter(m => m.prod_or_test === "TEST");
   const delayed = myMigrations.filter(m => m.overall_status === "delayed");
   const inProgress = myMigrations.filter(m => m.overall_status === "in_progress");
   const upcoming = myMigrations.filter(m => m.overall_status === "not_started");
