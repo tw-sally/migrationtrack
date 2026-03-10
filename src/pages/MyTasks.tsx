@@ -44,7 +44,9 @@ export default function MyTasks() {
       });
   }, [selectedOwner]);
 
-  const myMigrations = migrations.filter(m => m.task_owner === selectedOwner).sort((a, b) => a.migration_date.localeCompare(b.migration_date));
+  const myMigrations = migrations.filter(m => m.task_owner === selectedOwner && m.overall_status !== "completed").sort((a, b) => a.migration_date.localeCompare(b.migration_date));
+  const prodMigrations = myMigrations.filter(m => m.prod_or_test === "PROD");
+  const testMigrations = myMigrations.filter(m => m.prod_or_test === "TEST");
   const delayed = myMigrations.filter(m => m.overall_status === "delayed");
   const inProgress = myMigrations.filter(m => m.overall_status === "in_progress");
   const upcoming = myMigrations.filter(m => m.overall_status === "not_started");
@@ -126,69 +128,61 @@ export default function MyTasks() {
         </Card>
       )}
 
-      <Card>
-        <CardHeader><CardTitle className="text-base">My Migrations ({myMigrations.length})</CardTitle></CardHeader>
-        <CardContent className="space-y-0">
-          <div className="grid grid-cols-8 gap-4 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
-            <span>DBID</span><span>Phase</span><span>DB Type</span><span>DB Role</span><span>Migration Phase</span><span>D-Day</span><span>Completion</span><span>Status</span>
-          </div>
-          {myMigrations.map(m => {
-            // Determine current migration phase based on today's date
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const phases: { key: string; label: string; date: string }[] = [
-              { key: "D-3M", label: "D-3M", date: m.d_minus_3m },
-              { key: "D-2M", label: "D-2M", date: m.d_minus_2m },
-              { key: "D-1M", label: "D-1M", date: m.d_minus_1m },
-              { key: "D-Day", label: "D-Day", date: m.migration_date },
-              { key: "Post", label: "Post", date: m.migration_date },
-            ];
-
-            // Find which phase we're currently in
-            let currentPhase = phases[0];
-            for (let i = phases.length - 1; i >= 0; i--) {
-              const phaseDate = new Date(phases[i].date);
-              phaseDate.setHours(0, 0, 0, 0);
-              if (today >= phaseDate) {
-                currentPhase = phases[i];
-                break;
+      {[{ label: "PROD", items: prodMigrations }, { label: "TEST", items: testMigrations }].map(group => (
+        <Card key={group.label}>
+          <CardHeader><CardTitle className="text-base">{group.label} Migrations ({group.items.length})</CardTitle></CardHeader>
+          <CardContent className="space-y-0">
+            <div className="grid grid-cols-8 gap-4 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
+              <span>DBID</span><span>Phase</span><span>DB Type</span><span>DB Role</span><span>Migration Phase</span><span>D-Day</span><span>Completion</span><span>Status</span>
+            </div>
+            {group.items.map(m => {
+              const todayLocal = new Date();
+              todayLocal.setHours(0, 0, 0, 0);
+              const phases: { key: string; label: string; date: string }[] = [
+                { key: "D-3M", label: "D-3M", date: m.d_minus_3m },
+                { key: "D-2M", label: "D-2M", date: m.d_minus_2m },
+                { key: "D-1M", label: "D-1M", date: m.d_minus_1m },
+                { key: "D-Day", label: "D-Day", date: m.migration_date },
+                { key: "Post", label: "Post", date: m.migration_date },
+              ];
+              let currentPhase = phases[0];
+              for (let i = phases.length - 1; i >= 0; i--) {
+                const phaseDate = new Date(phases[i].date);
+                phaseDate.setHours(0, 0, 0, 0);
+                if (todayLocal >= phaseDate) { currentPhase = phases[i]; break; }
               }
-            }
+              const phaseTasks = allTasks.filter(t => t.migration_id === m.id && t.milestone === currentPhase.key).sort((a, b) => a.order - b.order);
+              const firstTask = phaseTasks[0];
+              const isDelayNotStarted = firstTask && firstTask.status !== "completed" && new Date(firstTask.due_date) < todayLocal;
 
-            // Check if first task in current phase is overdue and not completed
-            const phaseTasks = allTasks.filter(t => t.migration_id === m.id && t.milestone === currentPhase.key).sort((a, b) => a.order - b.order);
-            const firstTask = phaseTasks[0];
-            const isDelayNotStarted = firstTask && firstTask.status !== "completed" && new Date(firstTask.due_date) < today;
-
-            return (
-              <div key={m.id} className="grid grid-cols-8 gap-4 items-center px-3 py-2.5 border-b border-border last:border-b-0 hover:bg-muted/30 cursor-pointer transition-colors" onClick={() => navigate(`/migrations/${m.id}`)}>
-                <span className="font-mono font-medium text-sm">{m.dbid}</span>
-                <Badge variant="secondary" className="text-xs w-fit">{m.phase}</Badge>
-                <span className="text-xs">{m.db_type}</span>
-                <Badge variant="outline" className="text-xs w-fit">{m.prod_or_test}</Badge>
-                <span className="text-xs font-mono">{currentPhase.label}: {currentPhase.date}</span>
-                <span className="text-xs font-mono">{m.migration_date}</span>
-                <ProgressBar value={m.overall_status === "completed" ? 100 : m.completion_percent} className="w-full" />
-                {isDelayNotStarted ? (
-                  <Badge variant="outline" className="text-xs w-fit bg-destructive/15 text-destructive border-destructive/30 font-medium">
-                    Delay - Not Started
-                  </Badge>
-                ) : (
-                  <StatusBadge status={m.overall_status} />
-                )}
-              </div>
-            );
-          })}
-          {myMigrations.length === 0 && <p className="text-sm text-muted-foreground p-3">No migrations assigned</p>}
-        </CardContent>
-      </Card>
+              return (
+                <div key={m.id} className="grid grid-cols-8 gap-4 items-center px-3 py-2.5 border-b border-border last:border-b-0 hover:bg-muted/30 cursor-pointer transition-colors" onClick={() => navigate(`/migrations/${m.id}`)}>
+                  <span className="font-mono font-medium text-sm">{m.dbid}</span>
+                  <Badge variant="secondary" className="text-xs w-fit">{m.phase}</Badge>
+                  <span className="text-xs">{m.db_type}</span>
+                  <Badge variant="outline" className="text-xs w-fit">{m.prod_or_test}</Badge>
+                  <span className="text-xs font-mono">{currentPhase.label}: {currentPhase.date}</span>
+                  <span className="text-xs font-mono">{m.migration_date}</span>
+                  <ProgressBar value={m.completion_percent} className="w-full" />
+                  {isDelayNotStarted ? (
+                    <Badge variant="outline" className="text-xs w-fit bg-destructive/15 text-destructive border-destructive/30 font-medium">Delay - Not Started</Badge>
+                  ) : (
+                    <StatusBadge status={m.overall_status} />
+                  )}
+                </div>
+              );
+            })}
+            {group.items.length === 0 && <p className="text-sm text-muted-foreground p-3">No {group.label.toLowerCase()} migrations assigned</p>}
+          </CardContent>
+        </Card>
+      ))}
 
       {pendingTasks.length > 0 && (
         <Card>
           <CardHeader><CardTitle className="text-base">Pending Tasks ({pendingTasks.length})</CardTitle></CardHeader>
           <CardContent className="space-y-0">
             <div className="grid grid-cols-[40px_1fr_100px_100px_110px_110px_100px_180px] gap-2 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
-              <span>#</span><span>Task Name</span><span>Sponsor</span><span>Due Date</span><span>Completed</span><span>Check Mode</span><span>Status</span><span>Notes</span>
+              <span>#</span><span>Task Name</span><span>Sponsor</span><span>Start Date</span><span>Completed</span><span>Check Mode</span><span>Status</span><span>Notes</span>
             </div>
             {pendingTasks.map((task, i) => {
               const migration = migrations.find(m => m.id === task.migration_id);
@@ -240,7 +234,7 @@ export default function MyTasks() {
             <CollapsibleContent>
               <CardContent className="space-y-0 pt-0">
                 <div className="grid grid-cols-[40px_1fr_100px_100px_110px_110px_100px_180px] gap-2 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
-                  <span>#</span><span>Task Name</span><span>Sponsor</span><span>Due Date</span><span>Completed</span><span>Check Mode</span><span>Status</span><span>Notes</span>
+                  <span>#</span><span>Task Name</span><span>Sponsor</span><span>Start Date</span><span>Completed</span><span>Check Mode</span><span>Status</span><span>Notes</span>
                 </div>
                 {completedTasks.map((task, i) => {
                   const migration = migrations.find(m => m.id === task.migration_id);
