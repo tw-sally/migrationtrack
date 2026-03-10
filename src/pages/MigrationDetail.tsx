@@ -205,25 +205,14 @@ export default function MigrationDetail() {
 
       {milestones.map((ms, msIdx) => {
         const msTasks = tasks.filter(t => t.milestone === ms).sort((a, b) => a.order - b.order);
-        const nextMs = milestones[msIdx + 1];
-        const nextMsStartDate = nextMs ? getMilestoneDate(nextMs) : null;
-        const lastTask = msTasks[msTasks.length - 1];
-        const lastTaskDate = lastTask ? (lastTask.completed_at || lastTask.due_date) : null;
-        const isDelayed = lastTaskDate && nextMsStartDate && isAfter(parseISO(lastTaskDate), parseISO(nextMsStartDate));
-
         return (
-          <Card key={ms} className={isDelayed ? "border-destructive/50" : ""}>
+          <Card key={ms}>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Badge variant="outline" className={milestoneColors[ms]}>{ms}</Badge>
                 <span className="text-muted-foreground text-sm font-normal">{msTasks.filter(t => getTaskStatus(t) === "completed").length}/{msTasks.length} completed</span>
-                {isDelayed && (
-                  <Badge variant="destructive" className="text-[10px] gap-1 ml-auto">
-                    <AlertTriangle className="h-3 w-3" /> Delayed — exceeds {nextMs} start
-                  </Badge>
-                )}
                 {msTasks.length > 0 && (
-                  <div className={`flex items-center gap-1.5 ${isDelayed ? '' : 'ml-auto'}`}>
+                  <div className="flex items-center gap-1.5 ml-auto">
                     <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => batchTogglePhase(msTasks, true)}>
                       <CheckCheck className="h-3 w-3" /> Check All
                     </Button>
