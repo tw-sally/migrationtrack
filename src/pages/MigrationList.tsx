@@ -220,9 +220,9 @@ export default function MigrationList() {
               </SelectContent>
             </Select>
             <Select value={stageFilter} onValueChange={setStageFilter}>
-              <SelectTrigger className="w-[130px]"><SelectValue placeholder="Stage" /></SelectTrigger>
+              <SelectTrigger className="w-[160px]"><SelectValue placeholder="Migration Phase" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Stage</SelectItem>
+                <SelectItem value="all">All Migration Phase</SelectItem>
                 {stages.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -245,7 +245,7 @@ export default function MigrationList() {
                 <TableHead className="w-[50px] text-center">#</TableHead>
                 {([
                   ["DBID", "dbid"], ["Role", "role"], ["Phase", "phase"], ["DB Type", "dbType"], ["D-Day", "dDay"],
-                  ["Task Owner", "dba"], ["AP Sponsor", "apSponsor"], ["Stage", "stage"], ["Progress", "progress"], ["Status", "status"],
+                  ["Task Owner", "dba"], ["AP Sponsor", "apSponsor"], ["Migration Phase", "stage"], ["Progress", "progress"], ["Status", "status"],
                 ] as [string, SortKey][]).map(([label, key]) => (
                   <TableHead key={key} className="cursor-pointer select-none hover:bg-muted/50" onClick={() => toggleSort(key)}>
                     <span className="flex items-center">{label}<SortIcon col={key} /></span>
