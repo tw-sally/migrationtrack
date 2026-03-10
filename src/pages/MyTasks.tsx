@@ -70,16 +70,18 @@ export default function MyTasks() {
         .sort((a, b) => a.order - b.order);
 
       tasksInPhase.forEach(task => {
-        const taskDate = new Date(task.due_date);
-        // Reminding: due_date in current month & not_started (phase doesn't need to have passed)
-        if (taskDate.getMonth() === currentMonth && taskDate.getFullYear() === currentYear && task.status === "not_started") {
+        // D-3M/D-2M/D-1M/D-Day use phase start date; Post uses task due_date
+        const isPost = phase.key === "Post";
+        const relevantDate = isPost ? new Date(task.due_date) : new Date(phase.date);
+        relevantDate.setHours(0, 0, 0, 0);
+
+        // Reminding: relevant date in current month & not_started
+        if (relevantDate.getMonth() === currentMonth && relevantDate.getFullYear() === currentYear && task.status === "not_started") {
           rawRemindingTasks.push(task);
         }
-        // Delay: only check phases that have passed
-        if (today >= phaseDate) {
-          if (task.status === "delayed" || (task.status === "not_started" && today > new Date(task.due_date))) {
-            rawDelayTasks.push(task);
-          }
+        // Delay: relevant date has passed & task not completed
+        if (task.status === "delayed" || (task.status === "not_started" && today > relevantDate)) {
+          rawDelayTasks.push(task);
         }
       });
     });
