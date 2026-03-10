@@ -234,7 +234,7 @@ export default function MyTasks() {
             <CollapsibleContent>
               <CardContent className="space-y-0 pt-0">
                 <div className="grid grid-cols-[40px_1fr_100px_100px_110px_110px_100px_180px] gap-2 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
-                  <span>#</span><span>Task Name</span><span>Sponsor</span><span>Due Date</span><span>Completed</span><span>Check Mode</span><span>Status</span><span>Notes</span>
+                  <span>#</span><span>Task Name</span><span>Sponsor</span><span>Start Date</span><span>Completed</span><span>Check Mode</span><span>Status</span><span>Notes</span>
                 </div>
                 {completedTasks.map((task, i) => {
                   const migration = migrations.find(m => m.id === task.migration_id);
