@@ -225,7 +225,7 @@ export default function MigrationDetail() {
             </CardHeader>
             <CardContent className="space-y-0">
               <div className="grid grid-cols-[40px_1fr_100px_1fr_100px_110px_130px_100px_200px] gap-2 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
-                <span>#</span><span>Task Name</span><span>Sponsor</span><span>Remarks</span><span>Due Date</span><span>Completed</span><span>Check Mode</span><span>Status</span><span>Notes</span>
+                <span>#</span><span>Task Name</span><span>Sponsor</span><span>Remarks</span><span>Start Date</span><span>Completed</span><span>Check Mode</span><span>Status</span><span>Notes</span>
               </div>
               {msTasks.map((task, i) => (
                 <div key={task.id} className="grid grid-cols-[40px_1fr_100px_1fr_100px_110px_130px_100px_200px] gap-2 items-center px-3 py-2.5 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors">
