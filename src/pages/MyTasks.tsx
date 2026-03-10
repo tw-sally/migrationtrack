@@ -6,25 +6,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { StatusBadge } from "@/components/StatusBadge";
 import { ProgressBar } from "@/components/ProgressBar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { AlertTriangle, CheckCircle, Clock, Zap, PenLine, Check, Send, ChevronDown, Loader2 } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, Loader2, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function MyTasks() {
-  const { migrations, toggleTaskComplete } = useMigrationData();
+  const { migrations } = useMigrationData();
   const { displayName } = useAuth();
   const taskOwners = [...new Set(migrations.map(m => m.task_owner).filter(Boolean))].sort();
   const [selectedOwner, setSelectedOwner] = useState("");
-  const [completedOpen, setCompletedOpen] = useState(false);
-  const [noteInput, setNoteInput] = useState<Record<string, string>>({});
   const [allTasks, setAllTasks] = useState<MigrationTaskDB[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Default to logged-in user's display name if it matches a task owner
   useEffect(() => {
     if (!selectedOwner && displayName && taskOwners.includes(displayName)) {
       setSelectedOwner(displayName);
@@ -33,7 +27,6 @@ export default function MyTasks() {
     }
   }, [displayName, taskOwners, selectedOwner]);
 
-  // Fetch all tasks for the selected DBA
   useEffect(() => {
     if (!selectedOwner) return;
     setLoading(true);
@@ -51,16 +44,16 @@ export default function MyTasks() {
   const inProgress = myMigrations.filter(m => m.overall_status === "in_progress");
   const upcoming = myMigrations.filter(m => m.overall_status === "not_started");
 
-  const milestoneOrder: Record<string, number> = { "D-3M": 0, "D-2M": 1, "D-1M": 2, "D-Day": 3, "Post": 4 };
-  const completedTasks = allTasks.filter(t => t.status === "completed");
-
-  // For each migration, find the next 1 uncompleted task per active phase (current date > phase date)
-  const pendingTasks: MigrationTaskDB[] = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+
+  const remindingTasks: MigrationTaskDB[] = [];
+  const delayTasks: MigrationTaskDB[] = [];
 
   myMigrations.forEach(m => {
-    const phasesDates: { key: string; date: string }[] = [
+    const phasesDates = [
       { key: "D-3M", date: m.d_minus_3m },
       { key: "D-2M", date: m.d_minus_2m },
       { key: "D-1M", date: m.d_minus_1m },
@@ -71,25 +64,22 @@ export default function MyTasks() {
     phasesDates.forEach(phase => {
       const phaseDate = new Date(phase.date);
       phaseDate.setHours(0, 0, 0, 0);
-      if (today > phaseDate) {
+      if (today >= phaseDate) {
         const tasksInPhase = allTasks
           .filter(t => t.migration_id === m.id && t.milestone === phase.key && t.status !== "completed")
           .sort((a, b) => a.order - b.order);
-        if (tasksInPhase.length > 0) {
-          pendingTasks.push(tasksInPhase[0]);
-        }
+        tasksInPhase.forEach(task => {
+          const taskDate = new Date(task.due_date);
+          if (taskDate.getMonth() === currentMonth && taskDate.getFullYear() === currentYear && task.status === "not_started") {
+            remindingTasks.push(task);
+          }
+          if (task.status === "delayed" || (task.status === "not_started" && today > new Date(task.due_date))) {
+            delayTasks.push(task);
+          }
+        });
       }
     });
   });
-
-  pendingTasks.sort((a, b) => (milestoneOrder[a.milestone] ?? 99) - (milestoneOrder[b.milestone] ?? 99) || a.order - b.order);
-
-  const handleToggle = async (taskId: string) => {
-    await toggleTaskComplete(taskId);
-    // Refresh tasks
-    const { data } = await supabase.from("migration_tasks").select("*").eq("assignee", selectedOwner).order("order");
-    setAllTasks((data || []) as MigrationTaskDB[]);
-  };
 
   if (loading) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
@@ -114,20 +104,47 @@ export default function MyTasks() {
         <Card><CardContent className="pt-6 flex items-center gap-3"><CheckCircle className="h-5 w-5 text-success" /><div><p className="text-2xl font-bold">{upcoming.length}</p><p className="text-xs text-muted-foreground">Not Started</p></div></CardContent></Card>
       </div>
 
-      {delayed.length > 0 && (
-        <Card className="border-delay/30">
-          <CardHeader className="pb-3"><CardTitle className="text-base text-delay flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Delayed Items Requiring Attention</CardTitle></CardHeader>
+      {/* Reminding & Delay Tasks */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Bell className="h-4 w-4 text-in-progress" /> Reminding Tasks</CardTitle></CardHeader>
           <CardContent className="space-y-2">
-            {delayed.map(m => (
-              <div key={m.id} className="flex items-center justify-between p-3 rounded-lg bg-delay/5 border border-delay/20 cursor-pointer hover:bg-delay/10" onClick={() => navigate(`/migrations/${m.id}`)}>
-                <div><p className="font-mono font-medium text-sm">{m.dbid}</p><p className="text-xs text-muted-foreground">D-Day: {m.migration_date}</p></div>
-                <ProgressBar value={m.completion_percent} className="w-32" />
-              </div>
-            ))}
+            {remindingTasks.slice(0, 2).map(task => {
+              const migration = migrations.find(m => m.id === task.migration_id);
+              return (
+                <div key={task.id} className="flex items-center justify-between p-3 rounded-lg bg-in-progress/5 border border-in-progress/20 cursor-pointer hover:bg-in-progress/10" onClick={() => migration && navigate(`/migrations/${migration.id}`)}>
+                  <div>
+                    <p className="text-sm font-medium">{task.title}</p>
+                    <p className="text-xs text-muted-foreground">{migration?.dbid} · <Badge variant="outline" className="text-[10px] px-1 py-0">{task.milestone}</Badge> · {task.due_date}</p>
+                  </div>
+                  <StatusBadge status={task.status} />
+                </div>
+              );
+            })}
+            {remindingTasks.length === 0 && <p className="text-sm text-muted-foreground">No reminding tasks this month</p>}
           </CardContent>
         </Card>
-      )}
+        <Card className="border-delay/30">
+          <CardHeader className="pb-3"><CardTitle className="text-base text-delay flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Delay Tasks</CardTitle></CardHeader>
+          <CardContent className="space-y-2">
+            {delayTasks.slice(0, 2).map(task => {
+              const migration = migrations.find(m => m.id === task.migration_id);
+              return (
+                <div key={task.id} className="flex items-center justify-between p-3 rounded-lg bg-delay/5 border border-delay/20 cursor-pointer hover:bg-delay/10" onClick={() => migration && navigate(`/migrations/${migration.id}`)}>
+                  <div>
+                    <p className="text-sm font-medium">{task.title}</p>
+                    <p className="text-xs text-muted-foreground">{migration?.dbid} · <Badge variant="outline" className="text-[10px] px-1 py-0">{task.milestone}</Badge> · {task.due_date}</p>
+                  </div>
+                  <StatusBadge status="delayed" />
+                </div>
+              );
+            })}
+            {delayTasks.length === 0 && <p className="text-sm text-muted-foreground">No delayed tasks</p>}
+          </CardContent>
+        </Card>
+      </div>
 
+      {/* PROD & TEST Migration Lists */}
       {[{ label: "PROD", items: prodMigrations }, { label: "TEST", items: testMigrations }].map(group => (
         <Card key={group.label}>
           <CardHeader><CardTitle className="text-base">{group.label} Migrations ({group.items.length})</CardTitle></CardHeader>
@@ -138,7 +155,7 @@ export default function MyTasks() {
             {group.items.map(m => {
               const todayLocal = new Date();
               todayLocal.setHours(0, 0, 0, 0);
-              const phases: { key: string; label: string; date: string }[] = [
+              const phases = [
                 { key: "D-3M", label: "D-3M", date: m.d_minus_3m },
                 { key: "D-2M", label: "D-2M", date: m.d_minus_2m },
                 { key: "D-1M", label: "D-1M", date: m.d_minus_1m },
@@ -176,103 +193,6 @@ export default function MyTasks() {
           </CardContent>
         </Card>
       ))}
-
-      {pendingTasks.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle className="text-base">Pending Tasks ({pendingTasks.length})</CardTitle></CardHeader>
-          <CardContent className="space-y-0">
-            <div className="grid grid-cols-[40px_1fr_100px_100px_110px_110px_100px_180px] gap-2 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
-              <span>#</span><span>Task Name</span><span>Sponsor</span><span>Start Date</span><span>Completed</span><span>Check Mode</span><span>Status</span><span>Notes</span>
-            </div>
-            {pendingTasks.map((task, i) => {
-              const migration = migrations.find(m => m.id === task.migration_id);
-              return (
-                <div key={task.id} className="grid grid-cols-[40px_1fr_100px_100px_110px_110px_100px_180px] gap-2 items-center px-3 py-2.5 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors">
-                  <span className="text-sm font-mono text-muted-foreground">{i + 1}</span>
-                  <div className="flex items-center gap-2">
-                    <Button size="icon" variant="outline" className="h-6 w-6 shrink-0" onClick={() => handleToggle(task.id)}>
-                      <Check className="h-3 w-3" />
-                    </Button>
-                    <div>
-                      <span className="text-sm">{task.title}</span>
-                      <p className="text-[10px] text-muted-foreground">{migration?.dbid} · <Badge variant="outline" className="text-[10px] px-1 py-0">{task.milestone}</Badge></p>
-                    </div>
-                  </div>
-                  <span className="text-xs">{task.assignee}</span>
-                  <span className="text-xs font-mono">{task.due_date}</span>
-                  <span className="text-xs font-mono">{task.completed_at || "—"}</span>
-                  <div>
-                    {task.input_type === "api" ? (
-                      <Badge variant="outline" className="text-[10px] gap-1"><Zap className="h-2.5 w-2.5" /> API</Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-[10px] gap-1"><PenLine className="h-2.5 w-2.5" /> Manual</Badge>
-                    )}
-                  </div>
-                  <StatusBadge status={task.status} />
-                  <div className="flex items-center gap-1">
-                    <Textarea placeholder="Add a note..." className="text-xs min-h-[28px] h-7 resize-none flex-1" value={noteInput[task.id] || ""} onChange={e => setNoteInput(prev => ({ ...prev, [task.id]: e.target.value }))} />
-                    <Button size="sm" variant="ghost" className="h-7 px-1.5"><Send className="h-3 w-3" /></Button>
-                  </div>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-      )}
-
-      {completedTasks.length > 0 && (
-        <Collapsible open={completedOpen} onOpenChange={setCompletedOpen}>
-          <Card>
-            <CardHeader>
-              <CollapsibleTrigger className="flex items-center gap-2 w-full">
-                <CardTitle className="text-base text-muted-foreground flex items-center gap-2">
-                  Completed Tasks ({completedTasks.length})
-                  <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${completedOpen ? "rotate-180" : ""}`} />
-                </CardTitle>
-              </CollapsibleTrigger>
-            </CardHeader>
-            <CollapsibleContent>
-              <CardContent className="space-y-0 pt-0">
-                <div className="grid grid-cols-[40px_1fr_100px_100px_110px_110px_100px_180px] gap-2 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
-                  <span>#</span><span>Task Name</span><span>Sponsor</span><span>Start Date</span><span>Completed</span><span>Check Mode</span><span>Status</span><span>Notes</span>
-                </div>
-                {completedTasks.map((task, i) => {
-                  const migration = migrations.find(m => m.id === task.migration_id);
-                  return (
-                    <div key={task.id} className="grid grid-cols-[40px_1fr_100px_100px_110px_110px_100px_180px] gap-2 items-center px-3 py-2.5 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors opacity-70">
-                      <span className="text-sm font-mono text-muted-foreground">{i + 1}</span>
-                      <div className="flex items-center gap-2">
-                        <Button size="icon" variant="outline" className="h-6 w-6 shrink-0 bg-success/10 border-success/30" onClick={() => handleToggle(task.id)}>
-                          <Check className="h-3 w-3 text-success" />
-                        </Button>
-                        <div>
-                          <span className="text-sm line-through text-muted-foreground">{task.title}</span>
-                          <p className="text-[10px] text-muted-foreground">{migration?.dbid} · <Badge variant="outline" className="text-[10px] px-1 py-0">{task.milestone}</Badge></p>
-                        </div>
-                      </div>
-                      <span className="text-xs">{task.assignee}</span>
-                      <span className="text-xs font-mono">{task.due_date}</span>
-                      <span className="text-xs font-mono">{task.completed_at || "—"}</span>
-                      <div>
-                        {task.input_type === "api" ? (
-                          <Badge variant="outline" className="text-[10px] gap-1"><Zap className="h-2.5 w-2.5" /> API</Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-[10px] gap-1"><PenLine className="h-2.5 w-2.5" /> Manual</Badge>
-                        )}
-                      </div>
-                      <StatusBadge status={task.status} />
-                      <div className="flex items-center gap-1">
-                        <Textarea placeholder="Add a note..." className="text-xs min-h-[28px] h-7 resize-none flex-1" value={noteInput[task.id] || ""} onChange={e => setNoteInput(prev => ({ ...prev, [task.id]: e.target.value }))} />
-                        <Button size="sm" variant="ghost" className="h-7 px-1.5"><Send className="h-3 w-3" /></Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-      )}
     </div>
   );
 }
