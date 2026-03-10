@@ -64,20 +64,24 @@ export default function MyTasks() {
     phasesDates.forEach(phase => {
       const phaseDate = new Date(phase.date);
       phaseDate.setHours(0, 0, 0, 0);
-      if (today >= phaseDate) {
-        const tasksInPhase = allTasks
-          .filter(t => t.migration_id === m.id && t.milestone === phase.key && t.status !== "completed")
-          .sort((a, b) => a.order - b.order);
-        tasksInPhase.forEach(task => {
-          const taskDate = new Date(task.due_date);
-          if (taskDate.getMonth() === currentMonth && taskDate.getFullYear() === currentYear && task.status === "not_started") {
-            rawRemindingTasks.push(task);
-          }
+
+      const tasksInPhase = allTasks
+        .filter(t => t.migration_id === m.id && t.milestone === phase.key && t.status !== "completed")
+        .sort((a, b) => a.order - b.order);
+
+      tasksInPhase.forEach(task => {
+        const taskDate = new Date(task.due_date);
+        // Reminding: due_date in current month & not_started (phase doesn't need to have passed)
+        if (taskDate.getMonth() === currentMonth && taskDate.getFullYear() === currentYear && task.status === "not_started") {
+          rawRemindingTasks.push(task);
+        }
+        // Delay: only check phases that have passed
+        if (today >= phaseDate) {
           if (task.status === "delayed" || (task.status === "not_started" && today > new Date(task.due_date))) {
             rawDelayTasks.push(task);
           }
-        });
-      }
+        }
+      });
     });
   });
 
