@@ -220,9 +220,9 @@ export default function MigrationList() {
               </SelectContent>
             </Select>
             <Select value={stageFilter} onValueChange={setStageFilter}>
-              <SelectTrigger className="w-[130px]"><SelectValue placeholder="Stage" /></SelectTrigger>
+              <SelectTrigger className="w-[160px]"><SelectValue placeholder="Migration Phase" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Stage</SelectItem>
+                <SelectItem value="all">All Migration Phase</SelectItem>
                 {stages.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
