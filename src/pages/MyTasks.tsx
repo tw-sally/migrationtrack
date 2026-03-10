@@ -49,8 +49,8 @@ export default function MyTasks() {
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
 
-  const remindingTasks: MigrationTaskDB[] = [];
-  const delayTasks: MigrationTaskDB[] = [];
+  const rawRemindingTasks: MigrationTaskDB[] = [];
+  const rawDelayTasks: MigrationTaskDB[] = [];
 
   myMigrations.forEach(m => {
     const phasesDates = [
@@ -71,15 +71,42 @@ export default function MyTasks() {
         tasksInPhase.forEach(task => {
           const taskDate = new Date(task.due_date);
           if (taskDate.getMonth() === currentMonth && taskDate.getFullYear() === currentYear && task.status === "not_started") {
-            remindingTasks.push(task);
+            rawRemindingTasks.push(task);
           }
           if (task.status === "delayed" || (task.status === "not_started" && today > new Date(task.due_date))) {
-            delayTasks.push(task);
+            rawDelayTasks.push(task);
           }
         });
       }
     });
   });
+
+  // Get unique DB (migration_id) sets
+  const delayDbIds = new Set(rawDelayTasks.map(t => t.migration_id));
+  // Remove reminding tasks whose DB already appears in delay tasks
+  const filteredRemindingTasks = rawRemindingTasks.filter(t => !delayDbIds.has(t.migration_id));
+
+  // Determine how many tasks to show per DB based on unique DB count
+  const remindingDbIds = new Set(filteredRemindingTasks.map(t => t.migration_id));
+  const allUniqueDbCount = new Set([...delayDbIds, ...remindingDbIds]).size;
+
+  const pickTasksPerDb = (tasks: MigrationTaskDB[], maxPerDb: number): MigrationTaskDB[] => {
+    const byDb = new Map<string, MigrationTaskDB[]>();
+    tasks.forEach(t => {
+      if (!byDb.has(t.migration_id)) byDb.set(t.migration_id, []);
+      byDb.get(t.migration_id)!.push(t);
+    });
+    const result: MigrationTaskDB[] = [];
+    byDb.forEach(dbTasks => {
+      dbTasks.sort((a, b) => a.order - b.order);
+      result.push(...dbTasks.slice(0, maxPerDb));
+    });
+    return result.sort((a, b) => a.order - b.order);
+  };
+
+  const tasksPerDb = allUniqueDbCount > 2 ? 1 : 2;
+  const remindingTasks = pickTasksPerDb(filteredRemindingTasks, tasksPerDb);
+  const delayTasks = pickTasksPerDb(rawDelayTasks, tasksPerDb);
 
   if (loading) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
