@@ -112,6 +112,7 @@ interface MigrationContextType {
   fetchMigrationTasks: (migrationId: string) => Promise<MigrationTaskDB[]>;
   toggleTaskComplete: (taskId: string) => Promise<void>;
   regenerateMigrationTasks: (migrationId: string) => Promise<void>;
+  applyTemplateToNotStartedMigrations: (templateId: string) => Promise<number>;
 
   // Task Notes
   taskNotes: Record<string, TaskNoteDB[]>;
@@ -312,6 +313,69 @@ export function MigrationProvider({ children }: { children: ReactNode }) {
     toast.success("Tasks regenerated from template");
   }, [migrations, templates, fetchMigrationTasks]);
 
+  // ─── Apply Template to Not Started Migrations ───
+  const applyTemplateToNotStartedMigrations = useCallback(async (templateId: string) => {
+    const tpl = templates.find(t => t.id === templateId);
+    if (!tpl) { toast.error("Template not found"); return 0; }
+
+    // Find migrations using this template
+    const linkedMigrations = migrations.filter(m => m.template_id === templateId);
+    if (linkedMigrations.length === 0) { toast.info("No migrations using this template"); return 0; }
+
+    let appliedCount = 0;
+
+    for (const migration of linkedMigrations) {
+      // Fetch current tasks for this migration
+      const { data: existingTasks, error: fetchErr } = await supabase
+        .from("migration_tasks")
+        .select("*")
+        .eq("migration_id", migration.id);
+      if (fetchErr) continue;
+
+      // Skip if any task is not "not_started"
+      const allNotStarted = (existingTasks || []).every(t => t.status === "not_started");
+      if (!allNotStarted) continue;
+
+      // Delete existing tasks and their notes
+      if (existingTasks && existingTasks.length > 0) {
+        const taskIds = existingTasks.map(t => t.id);
+        await supabase.from("task_notes").delete().in("task_id", taskIds);
+      }
+      await supabase.from("migration_tasks").delete().eq("migration_id", migration.id);
+
+      // Generate new tasks from template
+      const newTasks = tpl.tasks.map(tt => {
+        let dueDate = migration.migration_date;
+        if (tt.milestone === "D-3M") dueDate = migration.d_minus_3m || migration.migration_date;
+        else if (tt.milestone === "D-2M") dueDate = migration.d_minus_2m || migration.migration_date;
+        else if (tt.milestone === "D-1M") dueDate = migration.d_minus_1m || migration.migration_date;
+        return {
+          migration_id: migration.id,
+          title: tt.title,
+          milestone: tt.milestone,
+          input_type: tt.input_type,
+          assignee: tt.assignee || migration.dba,
+          due_date: dueDate,
+          order: tt.order,
+          remarks: tt.remarks || "",
+          status: "not_started",
+        };
+      });
+
+      if (newTasks.length > 0) {
+        const { error: insErr } = await supabase.from("migration_tasks").insert(newTasks);
+        if (!insErr) appliedCount++;
+      }
+    }
+
+    if (appliedCount > 0) {
+      toast.success(`Template applied to ${appliedCount} migration(s)`);
+    } else {
+      toast.info("No eligible migrations found (all have started tasks)");
+    }
+    return appliedCount;
+  }, [templates, migrations]);
+
   // ─── Task Notes ───
   const fetchTaskNotes = useCallback(async (taskId: string) => {
     const { data, error } = await supabase.from("task_notes").select("*").eq("task_id", taskId).order("created_at");
@@ -339,7 +403,7 @@ export function MigrationProvider({ children }: { children: ReactNode }) {
       addTemplate, updateTemplate, deleteTemplate,
       addTemplateTask, updateTemplateTask, deleteTemplateTask, updateMilestoneOffset,
       migrations, migrationsLoading, fetchMigrations, addMigration, updateMigration, deleteMigration,
-      migrationTasks, fetchMigrationTasks, toggleTaskComplete, regenerateMigrationTasks,
+      migrationTasks, fetchMigrationTasks, toggleTaskComplete, regenerateMigrationTasks, applyTemplateToNotStartedMigrations,
       taskNotes, fetchTaskNotes, addTaskNote,
     }}>
       {children}
