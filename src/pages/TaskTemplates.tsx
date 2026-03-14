@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, Plus, PenLine, Zap, Loader2, Pencil, Save, Calendar, RefreshCw } from "lucide-react";
+import { Trash2, Plus, PenLine, Zap, Loader2, Pencil, Save, Calendar, RefreshCw, X } from "lucide-react";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
@@ -21,17 +21,19 @@ import {
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-type MilestonePhase = "D-3M" | "D-2M" | "D-1M" | "D-Day" | "Post";
-const milestoneOrder: MilestonePhase[] = ["D-3M", "D-2M", "D-1M", "D-Day", "Post"];
-const defaultOffsets: Record<MilestonePhase, number> = { "D-3M": -3, "D-2M": -2, "D-1M": -1, "D-Day": 0, "Post": 1 };
-
-// Templates with "Dev" or "CAT" in name only use D-1M, D-Day, Post
-function getTemplateMilestones(templateName: string): MilestonePhase[] {
-  const lower = templateName.toLowerCase();
-  if (lower.includes("dev") || lower.includes("cat")) {
-    return ["D-1M", "D-Day", "Post"];
+// Get milestones for a template from its offsets, sorted by offset_months
+function getTemplateMilestones(tpl: TemplateWithTasks): string[] {
+  if (tpl.milestoneOffsets.length === 0) {
+    // Fallback defaults for templates with no offsets yet
+    const lower = tpl.name.toLowerCase();
+    if (lower.includes("dev") || lower.includes("cat")) {
+      return ["D-1M", "D-Day", "Post"];
+    }
+    return ["D-3M", "D-2M", "D-1M", "D-Day", "Post"];
   }
-  return milestoneOrder;
+  return [...tpl.milestoneOffsets]
+    .sort((a, b) => a.offset_months - b.offset_months)
+    .map(o => o.milestone);
 }
 
 // Local draft for editing a single task row
@@ -46,7 +48,7 @@ export default function TaskTemplates() {
     templates, templatesLoading,
     addTemplate, deleteTemplate,
     addTemplateTask, updateTemplateTask, deleteTemplateTask,
-    updateMilestoneOffset, applyTemplateToNotStartedMigrations,
+    updateMilestoneOffset, deleteMilestoneOffset, applyTemplateToNotStartedMigrations,
   } = useMigrationData();
 
   const [applyingTemplateId, setApplyingTemplateId] = useState<string | null>(null);
@@ -62,6 +64,11 @@ export default function TaskTemplates() {
   const [editingOffsetsTemplateId, setEditingOffsetsTemplateId] = useState<string | null>(null);
   const [offsetDraft, setOffsetDraft] = useState<Record<string, number>>({});
 
+  // Add milestone dialog state
+  const [addMilestoneTemplateId, setAddMilestoneTemplateId] = useState<string | null>(null);
+  const [newMilestoneName, setNewMilestoneName] = useState("");
+  const [newMilestoneOffset, setNewMilestoneOffset] = useState(0);
+
   const startEditing = (task: TemplateTaskDB) => {
     setEditingTaskId(task.id);
     setDraft({ title: task.title, input_type: task.input_type, remarks: task.remarks || "" });
@@ -74,7 +81,7 @@ export default function TaskTemplates() {
     toast.success("Task updated");
   };
 
-  const handleAddRow = (tpl: TemplateWithTasks, milestone: MilestonePhase) => {
+  const handleAddRow = (tpl: TemplateWithTasks, milestone: string) => {
     const maxOrder = tpl.tasks.length > 0 ? Math.max(...tpl.tasks.map(t => t.order)) : 0;
     addTemplateTask({
       template_id: tpl.id,
@@ -89,6 +96,26 @@ export default function TaskTemplates() {
 
   const handleRemoveRow = (taskId: string) => {
     deleteTemplateTask(taskId);
+  };
+
+  const handleAddMilestone = async () => {
+    if (!addMilestoneTemplateId || !newMilestoneName.trim()) {
+      toast.error("Milestone name is required");
+      return;
+    }
+    const tpl = templates.find(t => t.id === addMilestoneTemplateId);
+    if (tpl) {
+      const exists = tpl.milestoneOffsets.some(o => o.milestone === newMilestoneName.trim());
+      if (exists) {
+        toast.error("This milestone already exists");
+        return;
+      }
+    }
+    await updateMilestoneOffset(addMilestoneTemplateId, newMilestoneName.trim(), newMilestoneOffset);
+    setAddMilestoneTemplateId(null);
+    setNewMilestoneName("");
+    setNewMilestoneOffset(0);
+    toast.success("Milestone added");
   };
 
   const handleCreate = async () => {
@@ -114,7 +141,14 @@ export default function TaskTemplates() {
           await updateMilestoneOffset(tpl.id, offset.milestone, offset.offset_months);
         }
       } else {
-        // Default task for new empty template
+        // Create default milestones for new empty template
+        const lower = newName.trim().toLowerCase();
+        const defaults = (lower.includes("dev") || lower.includes("cat"))
+          ? [{ m: "D-1M", o: -1 }, { m: "D-Day", o: 0 }, { m: "Post", o: 1 }]
+          : [{ m: "D-3M", o: -3 }, { m: "D-2M", o: -2 }, { m: "D-1M", o: -1 }, { m: "D-Day", o: 0 }, { m: "Post", o: 1 }];
+        for (const d of defaults) {
+          await updateMilestoneOffset(tpl.id, d.m, d.o);
+        }
         await addTemplateTask({
           template_id: tpl.id,
           title: "Confirm migration date",
@@ -151,13 +185,14 @@ export default function TaskTemplates() {
 
       <Accordion type="multiple" defaultValue={[]} className="space-y-3">
         {[...templates].sort((a, b) => {
-          // Put "DBVM" templates first, "Standard PROD" after
           const aIsDBVM = a.name.toLowerCase().includes("dbvm");
           const bIsDBVM = b.name.toLowerCase().includes("dbvm");
           if (aIsDBVM && !bIsDBVM) return -1;
           if (!aIsDBVM && bIsDBVM) return 1;
           return 0;
-        }).map(tpl => (
+        }).map(tpl => {
+          const tplMilestones = getTemplateMilestones(tpl);
+          return (
           <AccordionItem key={tpl.id} value={tpl.id} className="border rounded-lg bg-card px-4">
             <AccordionTrigger className="text-lg font-semibold hover:no-underline">
               <div className="flex items-center justify-between w-full pr-2">
@@ -218,44 +253,78 @@ export default function TaskTemplates() {
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Phase Start Date Offsets (months from D-Day)</span>
                   </div>
-                  {editingOffsetsTemplateId === tpl.id ? (
-                    <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={async () => {
-                    for (const milestone of getTemplateMilestones(tpl.name)) {
-                        const val = offsetDraft[milestone];
-                        if (val !== undefined) {
-                          const saved = tpl.milestoneOffsets.find(o => o.milestone === milestone);
-                          const currentVal = saved ? saved.offset_months : defaultOffsets[milestone];
-                          if (val !== currentVal) await updateMilestoneOffset(tpl.id, milestone, val);
-                        }
-                      }
-                      setEditingOffsetsTemplateId(null);
-                      toast.success("Offsets saved");
-                    }}>
-                      <Save className="h-3 w-3" /> Save
-                    </Button>
-                  ) : (
-                    <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs text-muted-foreground" onClick={() => {
-                    const draft: Record<string, number> = {};
-                      const tplMilestones = getTemplateMilestones(tpl.name);
-                      tplMilestones.forEach(m => {
-                        const saved = tpl.milestoneOffsets.find(o => o.milestone === m);
-                        draft[m] = saved ? saved.offset_months : defaultOffsets[m];
-                      });
-                      setOffsetDraft(draft);
-                      setEditingOffsetsTemplateId(tpl.id);
-                    }}>
-                      <Pencil className="h-3 w-3" /> Edit
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {editingOffsetsTemplateId === tpl.id ? (
+                      <>
+                        <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => {
+                          setAddMilestoneTemplateId(tpl.id);
+                        }}>
+                          <Plus className="h-3 w-3" /> Add Phase
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={async () => {
+                          for (const milestone of tplMilestones) {
+                            const val = offsetDraft[milestone];
+                            if (val !== undefined) {
+                              const saved = tpl.milestoneOffsets.find(o => o.milestone === milestone);
+                              const currentVal = saved ? saved.offset_months : 0;
+                              if (val !== currentVal) await updateMilestoneOffset(tpl.id, milestone, val);
+                            }
+                          }
+                          setEditingOffsetsTemplateId(null);
+                          toast.success("Offsets saved");
+                        }}>
+                          <Save className="h-3 w-3" /> Save
+                        </Button>
+                      </>
+                    ) : (
+                      <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs text-muted-foreground" onClick={() => {
+                        const draft: Record<string, number> = {};
+                        tplMilestones.forEach(m => {
+                          const saved = tpl.milestoneOffsets.find(o => o.milestone === m);
+                          draft[m] = saved ? saved.offset_months : 0;
+                        });
+                        setOffsetDraft(draft);
+                        setEditingOffsetsTemplateId(tpl.id);
+                      }}>
+                        <Pencil className="h-3 w-3" /> Edit
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${getTemplateMilestones(tpl.name).length}, 1fr)` }}>
-                  {getTemplateMilestones(tpl.name).map(milestone => {
+                <div className="flex flex-wrap gap-3">
+                  {tplMilestones.map(milestone => {
                     const saved = tpl.milestoneOffsets.find(o => o.milestone === milestone);
                     const currentVal = editingOffsetsTemplateId === tpl.id
-                      ? (offsetDraft[milestone] ?? (saved ? saved.offset_months : defaultOffsets[milestone]))
-                      : (saved ? saved.offset_months : defaultOffsets[milestone]);
+                      ? (offsetDraft[milestone] ?? (saved ? saved.offset_months : 0))
+                      : (saved ? saved.offset_months : 0);
                     return (
-                      <div key={milestone} className="flex flex-col items-center gap-1">
+                      <div key={milestone} className="flex flex-col items-center gap-1 relative">
+                        {editingOffsetsTemplateId === tpl.id && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <button className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-[10px] hover:bg-destructive/80 z-10">
+                                <X className="h-2.5 w-2.5" />
+                              </button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Remove Phase "{milestone}"</AlertDialogTitle>
+                                <AlertDialogDescription>This will also delete all template tasks under this phase. Continue?</AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={async () => {
+                                  await deleteMilestoneOffset(tpl.id, milestone);
+                                  setOffsetDraft(d => {
+                                    const next = { ...d };
+                                    delete next[milestone];
+                                    return next;
+                                  });
+                                }}>Delete</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                         <span className="text-xs text-muted-foreground">{milestone}</span>
                         {editingOffsetsTemplateId === tpl.id ? (
                           <Input
@@ -280,7 +349,7 @@ export default function TaskTemplates() {
               </div>
 
               <div className="space-y-6">
-                {getTemplateMilestones(tpl.name).map(milestone => {
+                {tplMilestones.map(milestone => {
                   const milestoneTasks = tpl.tasks.filter(t => t.milestone === milestone).sort((a, b) => a.order - b.order);
                   return (
                     <div key={milestone}>
@@ -363,9 +432,11 @@ export default function TaskTemplates() {
               </div>
             </AccordionContent>
           </AccordionItem>
-        ))}
+          );
+        })}
       </Accordion>
 
+      {/* Create Template Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent>
           <DialogHeader><DialogTitle>Create New Template</DialogTitle></DialogHeader>
@@ -388,6 +459,30 @@ export default function TaskTemplates() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
             <Button onClick={handleCreate}>Create</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Milestone Dialog */}
+      <Dialog open={!!addMilestoneTemplateId} onOpenChange={(open) => { if (!open) setAddMilestoneTemplateId(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Add New Phase</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Phase Name</Label>
+              <Input value={newMilestoneName} onChange={e => setNewMilestoneName(e.target.value)} placeholder="e.g., D-4M, D+2M, Pre-Check" />
+            </div>
+            <div>
+              <Label>Offset (months from D-Day)</Label>
+              <Input type="number" value={newMilestoneOffset} onChange={e => { const v = parseInt(e.target.value); if (!isNaN(v)) setNewMilestoneOffset(v); }} />
+              <p className="text-xs text-muted-foreground mt-1">
+                Negative = before D-Day, 0 = D-Day, Positive = after D-Day
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddMilestoneTemplateId(null)}>Cancel</Button>
+            <Button onClick={handleAddMilestone}>Add</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
