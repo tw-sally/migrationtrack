@@ -372,6 +372,18 @@ export default function TaskTemplates() {
           <div className="space-y-4">
             <div><Label>Template Name</Label><Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g., Custom PROD Migration" /></div>
             <div><Label>Description</Label><Input value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Brief description..." /></div>
+            <div>
+              <Label>Copy from Existing Template</Label>
+              <Select value={copyFromId} onValueChange={setCopyFromId}>
+                <SelectTrigger><SelectValue placeholder="Start from scratch" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Start from scratch</SelectItem>
+                  {templates.map(t => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
