@@ -142,23 +142,49 @@ export default function TaskTemplates() {
                   <span>{tpl.name}</span>
                   <span className="text-xs font-normal text-muted-foreground">{tpl.description}</span>
                 </div>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive h-7 px-2" onClick={e => e.stopPropagation()}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Template</AlertDialogTitle>
-                      <AlertDialogDescription>Are you sure you want to delete "{tpl.name}"? This action cannot be undone.</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => deleteTemplate(tpl.id)}>Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <div className="flex items-center gap-1">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="h-7 px-2 gap-1 text-xs" onClick={e => e.stopPropagation()} disabled={applyingTemplateId === tpl.id}>
+                        {applyingTemplateId === tpl.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                        Apply to all Not Started DB
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent onClick={e => e.stopPropagation()}>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Apply Template to Not Started DBs</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will regenerate tasks for all migrations using "{tpl.name}" where <strong>all tasks are still "Not Started"</strong>. Migrations with any in-progress or completed tasks will be skipped.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={async () => {
+                          setApplyingTemplateId(tpl.id);
+                          await applyTemplateToNotStartedMigrations(tpl.id);
+                          setApplyingTemplateId(null);
+                        }}>Apply</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive h-7 px-2" onClick={e => e.stopPropagation()}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent onClick={e => e.stopPropagation()}>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Template</AlertDialogTitle>
+                        <AlertDialogDescription>Are you sure you want to delete "{tpl.name}"? This action cannot be undone.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deleteTemplate(tpl.id)}>Delete</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
             </AccordionTrigger>
             <AccordionContent>
