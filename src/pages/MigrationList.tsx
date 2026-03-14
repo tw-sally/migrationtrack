@@ -46,7 +46,7 @@ export default function MigrationList() {
   const [editMigration, setEditMigration] = useState<MigrationDB | null>(null);
   const [prodTestFilter, setProdTestFilter] = useState<string>("all");
   const navigate = useNavigate();
-  const { migrations, migrationsLoading, templates } = useMigrationData();
+  const { migrations, migrationsLoading, templates, deleteMigration } = useMigrationData();
   const templateMap = useMemo(() => Object.fromEntries(templates.map(t => [t.id, t.name])), [templates]);
 
   const taskOwners = [...new Set(migrations.map(m => m.task_owner).filter(Boolean))].sort();
