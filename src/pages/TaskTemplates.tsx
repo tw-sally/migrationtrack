@@ -184,7 +184,7 @@ export default function TaskTemplates() {
         </Button>
       </div>
 
-      <Accordion type="multiple" defaultValue={[]} className="space-y-3">
+      <Accordion type="multiple" value={openPanels} onValueChange={setOpenPanels} className="space-y-3">
         {[...templates].sort((a, b) => {
           const aIsDBVM = a.name.toLowerCase().includes("dbvm");
           const bIsDBVM = b.name.toLowerCase().includes("dbvm");
