@@ -57,6 +57,7 @@ export interface MigrationTaskDB {
   status: string;
   assignee: string;
   due_date: string;
+  end_date: string | null;
   completed_at: string | null;
   order: number;
   remarks: string;
