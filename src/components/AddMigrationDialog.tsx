@@ -72,13 +72,9 @@ export function AddMigrationDialog({ open, onOpenChange }: Props) {
 
   const templateMilestones = useMemo(() => {
     if (!selectedTemplate) return [];
-    const seen = new Set<MilestonePhase>();
-    return selectedTemplate.tasks
-      .sort((a, b) => MILESTONE_PHASES.indexOf(a.milestone) - MILESTONE_PHASES.indexOf(b.milestone))
-      .reduce<MilestonePhase[]>((acc, t) => {
-        if (!seen.has(t.milestone)) { seen.add(t.milestone); acc.push(t.milestone); }
-        return acc;
-      }, []);
+    return [...selectedTemplate.milestoneOffsets]
+      .sort((a, b) => a.offset_months - b.offset_months)
+      .map(o => o.milestone);
   }, [selectedTemplate]);
 
   const handleMilestoneDateChange = (milestone: MilestonePhase, date: Date | undefined) => {
