@@ -16,7 +16,7 @@ export interface TemplateTaskDB {
   template_id: string;
   title: string;
   input_type: "manual" | "api";
-  milestone: "D-3M" | "D-2M" | "D-1M" | "D-Day" | "Post";
+  milestone: string;
   assignee: string;
   order: number;
   remarks: string;
