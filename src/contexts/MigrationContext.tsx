@@ -338,7 +338,7 @@ export function MigrationProvider({ children }: { children: ReactNode }) {
       templates, templatesLoading, fetchTemplates,
       addTemplate, updateTemplate, deleteTemplate,
       addTemplateTask, updateTemplateTask, deleteTemplateTask, updateMilestoneOffset,
-      migrations, migrationsLoading, fetchMigrations, addMigration, updateMigration,
+      migrations, migrationsLoading, fetchMigrations, addMigration, updateMigration, deleteMigration,
       migrationTasks, fetchMigrationTasks, toggleTaskComplete, regenerateMigrationTasks,
       taskNotes, fetchTaskNotes, addTaskNote,
     }}>
