@@ -112,6 +112,7 @@ interface MigrationContextType {
   fetchMigrationTasks: (migrationId: string) => Promise<MigrationTaskDB[]>;
   toggleTaskComplete: (taskId: string) => Promise<void>;
   regenerateMigrationTasks: (migrationId: string) => Promise<void>;
+  applyTemplateToNotStartedMigrations: (templateId: string) => Promise<number>;
 
   // Task Notes
   taskNotes: Record<string, TaskNoteDB[]>;
