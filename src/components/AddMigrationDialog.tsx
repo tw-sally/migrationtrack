@@ -50,8 +50,12 @@ export function AddMigrationDialog({ open, onOpenChange }: Props) {
   const selectedTemplate = templates.find(t => t.id === templateId);
 
   useEffect(() => {
-    if (dDay) setMilestoneDates(getDefaultMilestoneDates(dDay));
-  }, [dDay]);
+    if (dDay && selectedTemplate) {
+      setMilestoneDates(getDefaultMilestoneDates(dDay, selectedTemplate.milestoneOffsets));
+    } else if (dDay) {
+      setMilestoneDates({});
+    }
+  }, [dDay, selectedTemplate]);
 
   // Filter templates based on DB Role
   const filteredTemplates = templates.filter(t => {
