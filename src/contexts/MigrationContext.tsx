@@ -52,7 +52,7 @@ export interface MigrationTaskDB {
   migration_id: string;
   title: string;
   description: string | null;
-  milestone: "D-3M" | "D-2M" | "D-1M" | "D-Day" | "Post";
+  milestone: string;
   input_type: "manual" | "api";
   status: string;
   assignee: string;
