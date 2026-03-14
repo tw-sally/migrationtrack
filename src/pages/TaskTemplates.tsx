@@ -64,7 +64,8 @@ export default function TaskTemplates() {
   const [editingOffsetsTemplateId, setEditingOffsetsTemplateId] = useState<string | null>(null);
   const [offsetDraft, setOffsetDraft] = useState<Record<string, number>>({});
 
-  // Add milestone dialog state
+  // Controlled accordion state to persist open panels across re-renders
+  const [openPanels, setOpenPanels] = useState<string[]>([]);
   const [addMilestoneTemplateId, setAddMilestoneTemplateId] = useState<string | null>(null);
   const [newMilestoneName, setNewMilestoneName] = useState("");
   const [newMilestoneOffset, setNewMilestoneOffset] = useState(0);
@@ -183,7 +184,7 @@ export default function TaskTemplates() {
         </Button>
       </div>
 
-      <Accordion type="multiple" defaultValue={[]} className="space-y-3">
+      <Accordion type="multiple" value={openPanels} onValueChange={setOpenPanels} className="space-y-3">
         {[...templates].sort((a, b) => {
           const aIsDBVM = a.name.toLowerCase().includes("dbvm");
           const bIsDBVM = b.name.toLowerCase().includes("dbvm");
