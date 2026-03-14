@@ -105,6 +105,7 @@ interface MigrationContextType {
   fetchMigrations: () => Promise<void>;
   addMigration: (migration: Omit<MigrationDB, "id" | "created_at" | "updated_at">, tasks: Omit<MigrationTaskDB, "id" | "created_at" | "updated_at">[]) => Promise<void>;
   updateMigration: (id: string, data: Partial<Omit<MigrationDB, "id" | "created_at" | "updated_at">>) => Promise<void>;
+  deleteMigration: (id: string) => Promise<void>;
 
   // Migration Tasks
   migrationTasks: MigrationTaskDB[];
@@ -224,7 +225,21 @@ export function MigrationProvider({ children }: { children: ReactNode }) {
     await fetchMigrations();
   }, [fetchMigrations]);
 
-  // ─── Migration Tasks ───
+  const deleteMigration = useCallback(async (id: string) => {
+    // Delete related tasks and notes first
+    const { data: tasks } = await supabase.from("migration_tasks").select("id").eq("migration_id", id);
+    if (tasks && tasks.length > 0) {
+      const taskIds = tasks.map(t => t.id);
+      await supabase.from("task_notes").delete().in("task_id", taskIds);
+      await supabase.from("migration_tasks").delete().eq("migration_id", id);
+    }
+    const { error } = await supabase.from("migrations").delete().eq("id", id);
+    if (error) { toast.error("Failed to delete migration"); return; }
+    toast.success("Migration deleted");
+    await fetchMigrations();
+  }, [fetchMigrations]);
+
+
   const fetchMigrationTasks = useCallback(async (migrationId: string) => {
     const { data, error } = await supabase.from("migration_tasks").select("*").eq("migration_id", migrationId).order("order");
     if (error) { toast.error("Failed to load tasks"); return []; }
@@ -323,7 +338,7 @@ export function MigrationProvider({ children }: { children: ReactNode }) {
       templates, templatesLoading, fetchTemplates,
       addTemplate, updateTemplate, deleteTemplate,
       addTemplateTask, updateTemplateTask, deleteTemplateTask, updateMilestoneOffset,
-      migrations, migrationsLoading, fetchMigrations, addMigration, updateMigration,
+      migrations, migrationsLoading, fetchMigrations, addMigration, updateMigration, deleteMigration,
       migrationTasks, fetchMigrationTasks, toggleTaskComplete, regenerateMigrationTasks,
       taskNotes, fetchTaskNotes, addTaskNote,
     }}>
