@@ -198,6 +198,16 @@ export function MigrationProvider({ children }: { children: ReactNode }) {
     await fetchTemplates();
   }, [fetchTemplates]);
 
+  const deleteMilestoneOffset = useCallback(async (templateId: string, milestone: string) => {
+    const { error } = await supabase.from("template_milestone_offsets").delete()
+      .eq("template_id", templateId).eq("milestone", milestone);
+    if (error) { toast.error("Failed to delete milestone"); return; }
+    // Also delete template tasks with this milestone
+    await supabase.from("template_tasks").delete()
+      .eq("template_id", templateId).eq("milestone", milestone);
+    await fetchTemplates();
+  }, [fetchTemplates]);
+
   // ─── Migrations ───
   const fetchMigrations = useCallback(async () => {
     setMigrationsLoading(true);
