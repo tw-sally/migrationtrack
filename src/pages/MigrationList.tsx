@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { useMigrationData, MigrationDB } from "@/contexts/MigrationContext";
 import { AddMigrationDialog } from "@/components/AddMigrationDialog";
 import { EditMigrationDialog } from "@/components/EditMigrationDialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 type MilestonePhase = "D-3M" | "D-2M" | "D-1M" | "D-Day" | "Post";
 
