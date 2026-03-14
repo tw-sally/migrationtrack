@@ -3,6 +3,7 @@ import { useMigrationData, MigrationTaskDB } from "@/contexts/MigrationContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ProgressBar } from "@/components/ProgressBar";
@@ -33,6 +34,8 @@ export default function MigrationDetail() {
   const [savingPhase, setSavingPhase] = useState<string | null>(null);
   // Local status overrides (not yet saved)
   const [localStatusOverrides, setLocalStatusOverrides] = useState<Record<string, { status: string; completed_at: string | null }>>({});
+  // Local date overrides for start_date and end_date
+  const [localDateOverrides, setLocalDateOverrides] = useState<Record<string, { due_date?: string; end_date?: string }>>({});
 
   const template = useMemo(() => {
     if (!migration?.template_id) return null;
@@ -41,14 +44,19 @@ export default function MigrationDetail() {
 
   const templateName = template?.name || "—";
 
-  // Dev/CAT templates only use D-1M, D-Day, Post
+  // Use dynamic milestones from template offsets, fallback to hardcoded
   const activeMilestones = useMemo(() => {
+    if (template && template.milestoneOffsets.length > 0) {
+      return [...template.milestoneOffsets]
+        .sort((a, b) => a.offset_months - b.offset_months)
+        .map(o => o.milestone);
+    }
     const name = templateName.toLowerCase();
     if (name.includes("dev") || name.includes("cat")) {
-      return milestoneOrder.filter(m => m !== "D-3M" && m !== "D-2M");
+      return milestoneOrder.filter(m => m !== "D-3M" && m !== "D-2M") as string[];
     }
-    return milestoneOrder;
-  }, [templateName]);
+    return milestoneOrder as string[];
+  }, [template, templateName]);
 
   useEffect(() => {
     if (id) {
@@ -67,7 +75,7 @@ export default function MigrationDetail() {
   const tasks = migrationTasks.filter(t => t.migration_id === id);
   const milestones = activeMilestones;
 
-  const getMilestoneDate = (ms: MilestonePhase) => {
+  const getMilestoneDate = (ms: string) => {
     switch (ms) {
       case "D-3M": return migration.d_minus_3m;
       case "D-2M": return migration.d_minus_2m;
@@ -82,6 +90,12 @@ export default function MigrationDetail() {
   };
   const getTaskCompletedAt = (task: MigrationTaskDB) => {
     return localStatusOverrides[task.id]?.completed_at ?? task.completed_at;
+  };
+  const getTaskDueDate = (task: MigrationTaskDB) => {
+    return localDateOverrides[task.id]?.due_date ?? task.due_date;
+  };
+  const getTaskEndDate = (task: MigrationTaskDB) => {
+    return localDateOverrides[task.id]?.end_date ?? task.end_date ?? "";
   };
 
   const toggleLocalStatus = (taskId: string) => {
@@ -112,22 +126,47 @@ export default function MigrationDetail() {
   };
 
   const hasPhaseChanges = (msTasks: MigrationTaskDB[]) => {
-    return msTasks.some(t => localStatusOverrides[t.id] !== undefined) || msTasks.some(t => noteInput[t.id]?.trim());
+    return msTasks.some(t => localStatusOverrides[t.id] !== undefined) 
+      || msTasks.some(t => noteInput[t.id]?.trim())
+      || msTasks.some(t => localDateOverrides[t.id] !== undefined);
   };
 
-  const handleBulkSave = async (milestone: MilestonePhase) => {
+  // Determine delay status for tasks based on end_date
+  const computeDelayStatus = (taskId: string, currentStatus: string, endDate: string | null) => {
+    if (currentStatus === "completed") return "completed";
+    const today = new Date().toISOString().split("T")[0];
+    if (endDate && today > endDate) return "delayed";
+    return currentStatus === "delayed" ? "not_started" : currentStatus;
+  };
+
+  const handleBulkSave = async (milestone: string) => {
     const msTasks = migrationTasks.filter(t => t.migration_id === id && t.milestone === milestone);
     setSavingPhase(milestone);
     try {
-      // Save status changes
-      const statusUpdates = msTasks.filter(t => localStatusOverrides[t.id] !== undefined);
-      if (statusUpdates.length > 0) {
-        await Promise.all(statusUpdates.map(t => 
-          supabase.from("migration_tasks").update({
-            status: localStatusOverrides[t.id].status,
-            completed_at: localStatusOverrides[t.id].completed_at,
-          }).eq("id", t.id)
-        ));
+      // Prepare all updates per task
+      for (const t of msTasks) {
+        const statusOverride = localStatusOverrides[t.id];
+        const dateOverride = localDateOverrides[t.id];
+        
+        const currentStatus = statusOverride?.status ?? t.status;
+        const currentEndDate = dateOverride?.end_date ?? t.end_date;
+        
+        // Re-evaluate delay based on end_date
+        const finalStatus = computeDelayStatus(t.id, currentStatus, currentEndDate);
+        
+        const update: Record<string, any> = {};
+        if (statusOverride) {
+          update.status = finalStatus;
+          update.completed_at = statusOverride.completed_at;
+        } else if (finalStatus !== t.status) {
+          update.status = finalStatus;
+        }
+        if (dateOverride?.due_date) update.due_date = dateOverride.due_date;
+        if (dateOverride?.end_date !== undefined) update.end_date = dateOverride.end_date;
+        
+        if (Object.keys(update).length > 0) {
+          await supabase.from("migration_tasks").update(update).eq("id", t.id);
+        }
       }
 
       // Save notes
@@ -142,21 +181,31 @@ export default function MigrationDetail() {
         msTasks.forEach(t => delete next[t.id]);
         return next;
       });
+      setLocalDateOverrides(prev => {
+        const next = { ...prev };
+        msTasks.forEach(t => delete next[t.id]);
+        return next;
+      });
       setNoteInput(prev => {
         const next = { ...prev };
         msTasks.forEach(t => { next[t.id] = ""; });
         return next;
       });
 
-      // Refresh data
+      // Refresh data & recompute migration-level status
       if (id) {
-        await fetchMigrationTasks(id);
-        // Update migration completion percent
-        const allTasks = migrationTasks.map(t => localStatusOverrides[t.id] ? { ...t, ...localStatusOverrides[t.id] } : t);
-        const myTasks = allTasks.filter(t => t.migration_id === id);
+        const freshTasks = await fetchMigrationTasks(id);
+        const myTasks = freshTasks.filter(t => t.migration_id === id);
+        const hasAnyDelayed = myTasks.some(t => t.status === "delayed");
         const completedCount = myTasks.filter(t => t.status === "completed").length;
         const percent = Math.round((completedCount / myTasks.length) * 100);
-        await supabase.from("migrations").update({ completion_percent: percent, overall_status: percent === 100 ? "completed" : percent > 0 ? "in_progress" : "not_started" }).eq("id", id);
+        
+        let overallStatus = "not_started";
+        if (hasAnyDelayed) overallStatus = "delayed";
+        else if (percent === 100) overallStatus = "completed";
+        else if (percent > 0) overallStatus = "in_progress";
+        
+        await supabase.from("migrations").update({ completion_percent: percent, overall_status: overallStatus }).eq("id", id);
         await fetchMigrations();
       }
 
@@ -166,6 +215,15 @@ export default function MigrationDetail() {
     } finally {
       setSavingPhase(null);
     }
+  };
+
+  // Check if a task should show delay warning visually (before saving)
+  const isTaskVisuallyDelayed = (task: MigrationTaskDB) => {
+    const status = getTaskStatus(task);
+    if (status === "completed") return false;
+    const endDate = getTaskEndDate(task);
+    const today = new Date().toISOString().split("T")[0];
+    return endDate && today > endDate;
   };
 
   return (
@@ -180,7 +238,7 @@ export default function MigrationDetail() {
           </div>
           <p className="text-muted-foreground">{migration.db_type}</p>
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={async () => { if (id) { setLoading(true); setLocalStatusOverrides({}); setNoteInput({}); await regenerateMigrationTasks(id); setLoading(false); } }}>
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={async () => { if (id) { setLoading(true); setLocalStatusOverrides({}); setLocalDateOverrides({}); setNoteInput({}); await regenerateMigrationTasks(id); setLoading(false); } }}>
           <RefreshCw className="h-3.5 w-3.5" /> Regenerate Tasks
         </Button>
       </div>
@@ -195,7 +253,7 @@ export default function MigrationDetail() {
       <div className="flex items-center gap-2 overflow-x-auto pb-2">
         {activeMilestones.map((ms, i) => (
           <div key={ms} className="flex items-center">
-            <div className={`px-3 py-1.5 rounded-full text-xs font-medium ${milestoneColors[ms]}`}>
+            <div className={`px-3 py-1.5 rounded-full text-xs font-medium ${milestoneColors[ms as MilestonePhase] || "bg-muted text-muted-foreground"}`}>
               {ms} {getMilestoneDate(ms) && `(${getMilestoneDate(ms)})`}
             </div>
             {i < activeMilestones.length - 1 && <div className="w-8 h-px bg-border mx-1" />}
@@ -203,13 +261,13 @@ export default function MigrationDetail() {
         ))}
       </div>
 
-      {milestones.map((ms, msIdx) => {
+      {milestones.map((ms) => {
         const msTasks = tasks.filter(t => t.milestone === ms).sort((a, b) => a.order - b.order);
         return (
           <Card key={ms}>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <Badge variant="outline" className={milestoneColors[ms]}>{ms}</Badge>
+                <Badge variant="outline" className={milestoneColors[ms as MilestonePhase] || ""}>{ms}</Badge>
                 <span className="text-muted-foreground text-sm font-normal">{msTasks.filter(t => getTaskStatus(t) === "completed").length}/{msTasks.length} completed</span>
                 {msTasks.length > 0 && (
                   <div className="flex items-center gap-1.5 ml-auto">
@@ -224,11 +282,13 @@ export default function MigrationDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-0">
-              <div className="grid grid-cols-[40px_1fr_100px_1fr_100px_110px_130px_100px_200px] gap-2 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
-                <span>#</span><span>Task Name</span><span>Sponsor</span><span>Remarks</span><span>Start Date</span><span>Completed</span><span>Check Mode</span><span>Status</span><span>Notes</span>
+              <div className="grid grid-cols-[40px_1fr_100px_1fr_100px_100px_100px_130px_80px_200px] gap-2 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
+                <span>#</span><span>Task Name</span><span>Sponsor</span><span>Remarks</span><span>Start Date</span><span>End Date</span><span>Completed</span><span>Check Mode</span><span>Status</span><span>Notes</span>
               </div>
-              {msTasks.map((task, i) => (
-                <div key={task.id} className="grid grid-cols-[40px_1fr_100px_1fr_100px_110px_130px_100px_200px] gap-2 items-center px-3 py-2.5 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors">
+              {msTasks.map((task, i) => {
+                const delayed = isTaskVisuallyDelayed(task);
+                return (
+                <div key={task.id} className={`grid grid-cols-[40px_1fr_100px_1fr_100px_100px_100px_130px_80px_200px] gap-2 items-center px-3 py-2.5 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors ${delayed ? "bg-delay/5" : ""}`}>
                   <span className="text-sm font-mono text-muted-foreground">{i + 1}</span>
                   <div className="flex items-center gap-2">
                     <TooltipProvider>
@@ -246,10 +306,22 @@ export default function MigrationDetail() {
                       </Tooltip>
                     </TooltipProvider>
                     <span className={`text-sm ${getTaskStatus(task) === "completed" ? "line-through text-muted-foreground" : ""}`}>{task.title}</span>
+                    {delayed && <AlertTriangle className="h-3.5 w-3.5 text-delay shrink-0" />}
                   </div>
                   <span className="text-xs">{task.assignee}</span>
                   <span className="text-xs text-muted-foreground truncate">{task.remarks || "—"}</span>
-                  <span className="text-xs font-mono">{task.due_date}</span>
+                  <Input
+                    type="date"
+                    className="h-7 text-xs font-mono px-1"
+                    value={getTaskDueDate(task)}
+                    onChange={e => setLocalDateOverrides(prev => ({ ...prev, [task.id]: { ...prev[task.id], due_date: e.target.value } }))}
+                  />
+                  <Input
+                    type="date"
+                    className={`h-7 text-xs font-mono px-1 ${delayed ? "border-delay text-delay" : ""}`}
+                    value={getTaskEndDate(task)}
+                    onChange={e => setLocalDateOverrides(prev => ({ ...prev, [task.id]: { ...prev[task.id], end_date: e.target.value } }))}
+                  />
                   <span className="text-xs font-mono">{getTaskCompletedAt(task) || "—"}</span>
                   <div>
                     {task.input_type === "api" ? (
@@ -258,12 +330,13 @@ export default function MigrationDetail() {
                       <Badge variant="outline" className="text-[10px] gap-1"><PenLine className="h-2.5 w-2.5" /> Manual</Badge>
                     )}
                   </div>
-                  <StatusBadge status={getTaskStatus(task)} />
+                  <StatusBadge status={delayed ? "delayed" : getTaskStatus(task)} />
                   <div className="flex items-center">
                     <Textarea placeholder="Add a note..." className="text-xs min-h-[28px] h-7 resize-none flex-1" value={noteInput[task.id] || ""} onChange={e => setNoteInput(prev => ({ ...prev, [task.id]: e.target.value }))} />
                   </div>
                 </div>
-              ))}
+                );
+              })}
               {msTasks.length === 0 && <p className="text-sm text-muted-foreground p-3">No tasks in this phase</p>}
               {msTasks.length > 0 && (
                 <div className="flex justify-end p-3 pt-2">
