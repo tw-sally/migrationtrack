@@ -20,14 +20,12 @@ const DBA_LIST = ["STRUANB", "WYCHIANG", "YHLUZS", "JRLULAI", "RXYEA", "CHWUAZZI
 const SOURCE_DB_TYPES = ["Prod schema only", "Test DB full copy", "Null"];
 const MIGRATION_STRATEGIES = ["Migration After Release", "Scheduled downtime migration"];
 
-function getDefaultMilestoneDates(dDay: Date): Record<MilestonePhase, string> {
-  return {
-    "D-3M": format(subMonths(dDay, 3), "yyyy-MM-dd"),
-    "D-2M": format(subMonths(dDay, 2), "yyyy-MM-dd"),
-    "D-1M": format(subMonths(dDay, 1), "yyyy-MM-dd"),
-    "D-Day": format(dDay, "yyyy-MM-dd"),
-    "Post": format(dDay, "yyyy-MM-dd"),
-  };
+function getDefaultMilestoneDates(dDay: Date, offsets: { milestone: string; offset_months: number }[]): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const o of offsets) {
+    result[o.milestone] = format(subMonths(dDay, -o.offset_months), "yyyy-MM-dd");
+  }
+  return result;
 }
 
 interface Props { open: boolean; onOpenChange: (open: boolean) => void; }
