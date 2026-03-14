@@ -98,6 +98,7 @@ interface MigrationContextType {
   updateTemplateTask: (id: string, data: Partial<Pick<TemplateTaskDB, "title" | "input_type" | "milestone" | "assignee" | "order" | "remarks">>) => Promise<void>;
   deleteTemplateTask: (id: string) => Promise<void>;
   updateMilestoneOffset: (templateId: string, milestone: string, offsetMonths: number) => Promise<void>;
+  deleteMilestoneOffset: (templateId: string, milestone: string) => Promise<void>;
 
   // Migrations
   migrations: MigrationDB[];
