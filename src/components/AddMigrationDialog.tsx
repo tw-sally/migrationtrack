@@ -45,9 +45,7 @@ export function AddMigrationDialog({ open, onOpenChange }: Props) {
   const [templateId, setTemplateId] = useState<string>("");
   const [sourceDbType, setSourceDbType] = useState<string>("");
   const [migrationStrategy, setMigrationStrategy] = useState<string>("");
-  const [milestoneDates, setMilestoneDates] = useState<Record<MilestonePhase, string>>({
-    "D-3M": "", "D-2M": "", "D-1M": "", "D-Day": "", "Post": "",
-  });
+  const [milestoneDates, setMilestoneDates] = useState<Record<string, string>>({});
 
   const selectedTemplate = templates.find(t => t.id === templateId);
 
