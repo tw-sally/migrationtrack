@@ -46,8 +46,10 @@ export default function TaskTemplates() {
     templates, templatesLoading,
     addTemplate, deleteTemplate,
     addTemplateTask, updateTemplateTask, deleteTemplateTask,
-    updateMilestoneOffset,
+    updateMilestoneOffset, applyTemplateToNotStartedMigrations,
   } = useMigrationData();
+
+  const [applyingTemplateId, setApplyingTemplateId] = useState<string | null>(null);
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newName, setNewName] = useState("");
