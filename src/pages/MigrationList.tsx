@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, ArrowUp, ArrowDown, ArrowUpDown, Loader2, Pencil, ChevronsUpDown } from "lucide-react";
+import { Plus, ArrowUp, ArrowDown, ArrowUpDown, Loader2, Pencil, ChevronsUpDown, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMigrationData, MigrationDB } from "@/contexts/MigrationContext";
 import { AddMigrationDialog } from "@/components/AddMigrationDialog";
