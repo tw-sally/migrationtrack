@@ -129,19 +129,24 @@ export function AddMigrationDialog({ open, onOpenChange }: Props) {
     };
 
     const tasks = selectedTemplate
-      ? selectedTemplate.tasks.map(t => ({
-          migration_id: "", // will be set by context
-          title: t.title,
-          description: null,
-          milestone: t.milestone,
-          input_type: t.input_type,
-          status: "not_started",
-          assignee: t.assignee || dba,
-          due_date: milestoneDates[t.milestone] || dDayStr,
-          completed_at: null,
-          order: t.order,
-          remarks: t.remarks || "",
-        }))
+      ? selectedTemplate.tasks.map(t => {
+          const startDate = milestoneDates[t.milestone] || dDayStr;
+          const endDate = format(addMonths(parse(startDate, "yyyy-MM-dd", new Date()), 1), "yyyy-MM-dd");
+          return {
+            migration_id: "",
+            title: t.title,
+            description: null,
+            milestone: t.milestone,
+            input_type: t.input_type,
+            status: "not_started",
+            assignee: t.assignee || dba,
+            due_date: startDate,
+            end_date: endDate,
+            completed_at: null,
+            order: t.order,
+            remarks: t.remarks || "",
+          };
+        })
       : [];
 
     await addMigration(migration, tasks);
