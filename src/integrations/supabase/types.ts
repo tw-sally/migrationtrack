@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           description: string | null
           due_date: string
+          end_date: string | null
           id: string
           input_type: string
           migration_id: string
@@ -37,6 +38,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           due_date: string
+          end_date?: string | null
           id?: string
           input_type?: string
           migration_id: string
@@ -53,6 +55,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           due_date?: string
+          end_date?: string | null
           id?: string
           input_type?: string
           migration_id?: string
