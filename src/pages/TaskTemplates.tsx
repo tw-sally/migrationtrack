@@ -95,19 +95,41 @@ export default function TaskTemplates() {
     if (!newName.trim()) { toast.error("Template name is required"); return; }
     const tpl = await addTemplate(newName.trim(), newDesc.trim());
     if (tpl) {
-      await addTemplateTask({
-        template_id: tpl.id,
-        title: "Confirm migration date",
-        input_type: "manual",
-        milestone: "D-3M",
-        assignee: "",
-        order: 1,
-        remarks: "",
-      });
+      const sourceTpl = copyFromId ? templates.find(t => t.id === copyFromId) : null;
+      if (sourceTpl) {
+        // Copy all tasks from source template
+        for (const task of sourceTpl.tasks) {
+          await addTemplateTask({
+            template_id: tpl.id,
+            title: task.title,
+            input_type: task.input_type,
+            milestone: task.milestone,
+            assignee: task.assignee,
+            order: task.order,
+            remarks: task.remarks || "",
+          });
+        }
+        // Copy milestone offsets
+        for (const offset of sourceTpl.milestoneOffsets) {
+          await updateMilestoneOffset(tpl.id, offset.milestone, offset.offset_months);
+        }
+      } else {
+        // Default task for new empty template
+        await addTemplateTask({
+          template_id: tpl.id,
+          title: "Confirm migration date",
+          input_type: "manual",
+          milestone: "D-3M",
+          assignee: "",
+          order: 1,
+          remarks: "",
+        });
+      }
     }
     setShowCreateDialog(false);
     setNewName("");
     setNewDesc("");
+    setCopyFromId("");
     toast.success("Template created");
   };
 
