@@ -13,11 +13,9 @@ import { format, subMonths, parse } from "date-fns";
 import { useMigrationData } from "@/contexts/MigrationContext";
 import { toast } from "sonner";
 
-type MilestonePhase = "D-3M" | "D-2M" | "D-1M" | "D-Day" | "Post";
 const PHASES = ["BSID", "PLED", "AAID", "IMC", "TSID", "ICSD", "AUDIT", "FAC", "300mm"];
 const DB_TYPES = ["ENT Physical PROD (BSID)", "ENT DBVM PROD", "ENT DBVM TEST", "ENT Physical PROD (TSID)", "300mm Physical PROD (incl. Provision)"];
 const DB_ROLES = ["PROD", "DEV/CAT"] as const;
-const MILESTONE_PHASES: MilestonePhase[] = ["D-3M", "D-2M", "D-1M", "D-Day", "Post"];
 const DBA_LIST = ["STRUANB", "WYCHIANG", "YHLUZS", "JRLULAI", "RXYEA", "CHWUAZZI", "HEHUANGB", "HMHSIEHC"];
 const SOURCE_DB_TYPES = ["Prod schema only", "Test DB full copy", "Null"];
 const MIGRATION_STRATEGIES = ["Migration After Release", "Scheduled downtime migration"];
