@@ -64,7 +64,8 @@ export default function TaskTemplates() {
   const [editingOffsetsTemplateId, setEditingOffsetsTemplateId] = useState<string | null>(null);
   const [offsetDraft, setOffsetDraft] = useState<Record<string, number>>({});
 
-  // Add milestone dialog state
+  // Controlled accordion state to persist open panels across re-renders
+  const [openPanels, setOpenPanels] = useState<string[]>([]);
   const [addMilestoneTemplateId, setAddMilestoneTemplateId] = useState<string | null>(null);
   const [newMilestoneName, setNewMilestoneName] = useState("");
   const [newMilestoneOffset, setNewMilestoneOffset] = useState(0);
