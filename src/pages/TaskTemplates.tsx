@@ -95,7 +95,7 @@ export default function TaskTemplates() {
     if (!newName.trim()) { toast.error("Template name is required"); return; }
     const tpl = await addTemplate(newName.trim(), newDesc.trim());
     if (tpl) {
-      const sourceTpl = copyFromId ? templates.find(t => t.id === copyFromId) : null;
+      const sourceTpl = (copyFromId && copyFromId !== "none") ? templates.find(t => t.id === copyFromId) : null;
       if (sourceTpl) {
         // Copy all tasks from source template
         for (const task of sourceTpl.tasks) {
