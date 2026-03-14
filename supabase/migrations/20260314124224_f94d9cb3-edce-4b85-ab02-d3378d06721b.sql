@@ -1,0 +1,1 @@
+ALTER TABLE public.migration_tasks ADD COLUMN IF NOT EXISTS end_date text;
