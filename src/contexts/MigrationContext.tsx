@@ -105,6 +105,7 @@ interface MigrationContextType {
   fetchMigrations: () => Promise<void>;
   addMigration: (migration: Omit<MigrationDB, "id" | "created_at" | "updated_at">, tasks: Omit<MigrationTaskDB, "id" | "created_at" | "updated_at">[]) => Promise<void>;
   updateMigration: (id: string, data: Partial<Omit<MigrationDB, "id" | "created_at" | "updated_at">>) => Promise<void>;
+  deleteMigration: (id: string) => Promise<void>;
 
   // Migration Tasks
   migrationTasks: MigrationTaskDB[];
