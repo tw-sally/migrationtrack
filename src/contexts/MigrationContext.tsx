@@ -364,6 +364,7 @@ export function MigrationProvider({ children }: { children: ReactNode }) {
         if (tt.milestone === "D-3M") dueDate = migration.d_minus_3m || migration.migration_date;
         else if (tt.milestone === "D-2M") dueDate = migration.d_minus_2m || migration.migration_date;
         else if (tt.milestone === "D-1M") dueDate = migration.d_minus_1m || migration.migration_date;
+        const endDate = format(addMonths(parse(dueDate, "yyyy-MM-dd", new Date()), 1), "yyyy-MM-dd");
         return {
           migration_id: migration.id,
           title: tt.title,
@@ -371,6 +372,7 @@ export function MigrationProvider({ children }: { children: ReactNode }) {
           input_type: tt.input_type,
           assignee: tt.assignee || migration.dba,
           due_date: dueDate,
+          end_date: endDate,
           order: tt.order,
           remarks: tt.remarks || "",
           status: "not_started",
