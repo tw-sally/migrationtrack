@@ -77,7 +77,7 @@ export function AddMigrationDialog({ open, onOpenChange }: Props) {
       .map(o => o.milestone);
   }, [selectedTemplate]);
 
-  const handleMilestoneDateChange = (milestone: MilestonePhase, date: Date | undefined) => {
+  const handleMilestoneDateChange = (milestone: string, date: Date | undefined) => {
     if (date) setMilestoneDates(prev => ({ ...prev, [milestone]: format(date, "yyyy-MM-dd") }));
   };
 
