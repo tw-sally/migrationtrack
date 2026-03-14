@@ -54,6 +54,7 @@ export default function TaskTemplates() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const [copyFromId, setCopyFromId] = useState<string>("");
 
   // Track which task is being edited + its local draft
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
