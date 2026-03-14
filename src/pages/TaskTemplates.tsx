@@ -54,6 +54,7 @@ export default function TaskTemplates() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const [copyFromId, setCopyFromId] = useState<string>("");
 
   // Track which task is being edited + its local draft
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -94,19 +95,41 @@ export default function TaskTemplates() {
     if (!newName.trim()) { toast.error("Template name is required"); return; }
     const tpl = await addTemplate(newName.trim(), newDesc.trim());
     if (tpl) {
-      await addTemplateTask({
-        template_id: tpl.id,
-        title: "Confirm migration date",
-        input_type: "manual",
-        milestone: "D-3M",
-        assignee: "",
-        order: 1,
-        remarks: "",
-      });
+      const sourceTpl = (copyFromId && copyFromId !== "none") ? templates.find(t => t.id === copyFromId) : null;
+      if (sourceTpl) {
+        // Copy all tasks from source template
+        for (const task of sourceTpl.tasks) {
+          await addTemplateTask({
+            template_id: tpl.id,
+            title: task.title,
+            input_type: task.input_type,
+            milestone: task.milestone,
+            assignee: task.assignee,
+            order: task.order,
+            remarks: task.remarks || "",
+          });
+        }
+        // Copy milestone offsets
+        for (const offset of sourceTpl.milestoneOffsets) {
+          await updateMilestoneOffset(tpl.id, offset.milestone, offset.offset_months);
+        }
+      } else {
+        // Default task for new empty template
+        await addTemplateTask({
+          template_id: tpl.id,
+          title: "Confirm migration date",
+          input_type: "manual",
+          milestone: "D-3M",
+          assignee: "",
+          order: 1,
+          remarks: "",
+        });
+      }
     }
     setShowCreateDialog(false);
     setNewName("");
     setNewDesc("");
+    setCopyFromId("");
     toast.success("Template created");
   };
 
@@ -349,6 +372,18 @@ export default function TaskTemplates() {
           <div className="space-y-4">
             <div><Label>Template Name</Label><Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g., Custom PROD Migration" /></div>
             <div><Label>Description</Label><Input value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Brief description..." /></div>
+            <div>
+              <Label>Copy from Existing Template</Label>
+              <Select value={copyFromId} onValueChange={setCopyFromId}>
+                <SelectTrigger><SelectValue placeholder="Start from scratch" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Start from scratch</SelectItem>
+                  {templates.map(t => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
