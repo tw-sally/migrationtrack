@@ -225,7 +225,21 @@ export function MigrationProvider({ children }: { children: ReactNode }) {
     await fetchMigrations();
   }, [fetchMigrations]);
 
-  // ─── Migration Tasks ───
+  const deleteMigration = useCallback(async (id: string) => {
+    // Delete related tasks and notes first
+    const { data: tasks } = await supabase.from("migration_tasks").select("id").eq("migration_id", id);
+    if (tasks && tasks.length > 0) {
+      const taskIds = tasks.map(t => t.id);
+      await supabase.from("task_notes").delete().in("task_id", taskIds);
+      await supabase.from("migration_tasks").delete().eq("migration_id", id);
+    }
+    const { error } = await supabase.from("migrations").delete().eq("id", id);
+    if (error) { toast.error("Failed to delete migration"); return; }
+    toast.success("Migration deleted");
+    await fetchMigrations();
+  }, [fetchMigrations]);
+
+
   const fetchMigrationTasks = useCallback(async (migrationId: string) => {
     const { data, error } = await supabase.from("migration_tasks").select("*").eq("migration_id", migrationId).order("order");
     if (error) { toast.error("Failed to load tasks"); return []; }
