@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, subMonths, parse } from "date-fns";
+import { format, subMonths, addMonths, parse } from "date-fns";
 import { useMigrationData } from "@/contexts/MigrationContext";
 import { toast } from "sonner";
 
