@@ -16,7 +16,7 @@ export interface TemplateTaskDB {
   template_id: string;
   title: string;
   input_type: "manual" | "api";
-  milestone: "D-3M" | "D-2M" | "D-1M" | "D-Day" | "Post";
+  milestone: string;
   assignee: string;
   order: number;
   remarks: string;
@@ -52,7 +52,7 @@ export interface MigrationTaskDB {
   migration_id: string;
   title: string;
   description: string | null;
-  milestone: "D-3M" | "D-2M" | "D-1M" | "D-Day" | "Post";
+  milestone: string;
   input_type: "manual" | "api";
   status: string;
   assignee: string;
@@ -98,6 +98,7 @@ interface MigrationContextType {
   updateTemplateTask: (id: string, data: Partial<Pick<TemplateTaskDB, "title" | "input_type" | "milestone" | "assignee" | "order" | "remarks">>) => Promise<void>;
   deleteTemplateTask: (id: string) => Promise<void>;
   updateMilestoneOffset: (templateId: string, milestone: string, offsetMonths: number) => Promise<void>;
+  deleteMilestoneOffset: (templateId: string, milestone: string) => Promise<void>;
 
   // Migrations
   migrations: MigrationDB[];
@@ -194,6 +195,16 @@ export function MigrationProvider({ children }: { children: ReactNode }) {
       { onConflict: "template_id,milestone" }
     );
     if (error) { toast.error("Failed to update milestone offset"); return; }
+    await fetchTemplates();
+  }, [fetchTemplates]);
+
+  const deleteMilestoneOffset = useCallback(async (templateId: string, milestone: string) => {
+    const { error } = await supabase.from("template_milestone_offsets").delete()
+      .eq("template_id", templateId).eq("milestone", milestone);
+    if (error) { toast.error("Failed to delete milestone"); return; }
+    // Also delete template tasks with this milestone
+    await supabase.from("template_tasks").delete()
+      .eq("template_id", templateId).eq("milestone", milestone);
     await fetchTemplates();
   }, [fetchTemplates]);
 
@@ -401,7 +412,7 @@ export function MigrationProvider({ children }: { children: ReactNode }) {
     <MigrationContext.Provider value={{
       templates, templatesLoading, fetchTemplates,
       addTemplate, updateTemplate, deleteTemplate,
-      addTemplateTask, updateTemplateTask, deleteTemplateTask, updateMilestoneOffset,
+      addTemplateTask, updateTemplateTask, deleteTemplateTask, updateMilestoneOffset, deleteMilestoneOffset,
       migrations, migrationsLoading, fetchMigrations, addMigration, updateMigration, deleteMigration,
       migrationTasks, fetchMigrationTasks, toggleTaskComplete, regenerateMigrationTasks, applyTemplateToNotStartedMigrations,
       taskNotes, fetchTaskNotes, addTaskNote,

@@ -13,23 +13,19 @@ import { format, subMonths, parse } from "date-fns";
 import { useMigrationData } from "@/contexts/MigrationContext";
 import { toast } from "sonner";
 
-type MilestonePhase = "D-3M" | "D-2M" | "D-1M" | "D-Day" | "Post";
 const PHASES = ["BSID", "PLED", "AAID", "IMC", "TSID", "ICSD", "AUDIT", "FAC", "300mm"];
 const DB_TYPES = ["ENT Physical PROD (BSID)", "ENT DBVM PROD", "ENT DBVM TEST", "ENT Physical PROD (TSID)", "300mm Physical PROD (incl. Provision)"];
 const DB_ROLES = ["PROD", "DEV/CAT"] as const;
-const MILESTONE_PHASES: MilestonePhase[] = ["D-3M", "D-2M", "D-1M", "D-Day", "Post"];
 const DBA_LIST = ["STRUANB", "WYCHIANG", "YHLUZS", "JRLULAI", "RXYEA", "CHWUAZZI", "HEHUANGB", "HMHSIEHC"];
 const SOURCE_DB_TYPES = ["Prod schema only", "Test DB full copy", "Null"];
 const MIGRATION_STRATEGIES = ["Migration After Release", "Scheduled downtime migration"];
 
-function getDefaultMilestoneDates(dDay: Date): Record<MilestonePhase, string> {
-  return {
-    "D-3M": format(subMonths(dDay, 3), "yyyy-MM-dd"),
-    "D-2M": format(subMonths(dDay, 2), "yyyy-MM-dd"),
-    "D-1M": format(subMonths(dDay, 1), "yyyy-MM-dd"),
-    "D-Day": format(dDay, "yyyy-MM-dd"),
-    "Post": format(dDay, "yyyy-MM-dd"),
-  };
+function getDefaultMilestoneDates(dDay: Date, offsets: { milestone: string; offset_months: number }[]): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const o of offsets) {
+    result[o.milestone] = format(subMonths(dDay, -o.offset_months), "yyyy-MM-dd");
+  }
+  return result;
 }
 
 interface Props { open: boolean; onOpenChange: (open: boolean) => void; }
@@ -49,15 +45,17 @@ export function AddMigrationDialog({ open, onOpenChange }: Props) {
   const [templateId, setTemplateId] = useState<string>("");
   const [sourceDbType, setSourceDbType] = useState<string>("");
   const [migrationStrategy, setMigrationStrategy] = useState<string>("");
-  const [milestoneDates, setMilestoneDates] = useState<Record<MilestonePhase, string>>({
-    "D-3M": "", "D-2M": "", "D-1M": "", "D-Day": "", "Post": "",
-  });
+  const [milestoneDates, setMilestoneDates] = useState<Record<string, string>>({});
 
   const selectedTemplate = templates.find(t => t.id === templateId);
 
   useEffect(() => {
-    if (dDay) setMilestoneDates(getDefaultMilestoneDates(dDay));
-  }, [dDay]);
+    if (dDay && selectedTemplate) {
+      setMilestoneDates(getDefaultMilestoneDates(dDay, selectedTemplate.milestoneOffsets));
+    } else if (dDay) {
+      setMilestoneDates({});
+    }
+  }, [dDay, selectedTemplate]);
 
   // Filter templates based on DB Role
   const filteredTemplates = templates.filter(t => {
@@ -78,16 +76,12 @@ export function AddMigrationDialog({ open, onOpenChange }: Props) {
 
   const templateMilestones = useMemo(() => {
     if (!selectedTemplate) return [];
-    const seen = new Set<MilestonePhase>();
-    return selectedTemplate.tasks
-      .sort((a, b) => MILESTONE_PHASES.indexOf(a.milestone) - MILESTONE_PHASES.indexOf(b.milestone))
-      .reduce<MilestonePhase[]>((acc, t) => {
-        if (!seen.has(t.milestone)) { seen.add(t.milestone); acc.push(t.milestone); }
-        return acc;
-      }, []);
+    return [...selectedTemplate.milestoneOffsets]
+      .sort((a, b) => a.offset_months - b.offset_months)
+      .map(o => o.milestone);
   }, [selectedTemplate]);
 
-  const handleMilestoneDateChange = (milestone: MilestonePhase, date: Date | undefined) => {
+  const handleMilestoneDateChange = (milestone: string, date: Date | undefined) => {
     if (date) setMilestoneDates(prev => ({ ...prev, [milestone]: format(date, "yyyy-MM-dd") }));
   };
 
@@ -95,7 +89,7 @@ export function AddMigrationDialog({ open, onOpenChange }: Props) {
     setDbid(""); setPhase("BSID"); setDbType(DB_TYPES[0]); setDbRole("PROD");
     setDba(""); setTaskOwner(""); setApSponsor(""); setApManager(""); setDDay(undefined); setTargetDb(""); setTemplateId("");
     setSourceDbType(""); setMigrationStrategy("");
-    setMilestoneDates({ "D-3M": "", "D-2M": "", "D-1M": "", "D-Day": "", "Post": "" });
+    setMilestoneDates({});
   };
 
   const handleSave = async () => {
