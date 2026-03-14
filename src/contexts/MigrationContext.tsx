@@ -403,7 +403,7 @@ export function MigrationProvider({ children }: { children: ReactNode }) {
       addTemplate, updateTemplate, deleteTemplate,
       addTemplateTask, updateTemplateTask, deleteTemplateTask, updateMilestoneOffset,
       migrations, migrationsLoading, fetchMigrations, addMigration, updateMigration, deleteMigration,
-      migrationTasks, fetchMigrationTasks, toggleTaskComplete, regenerateMigrationTasks,
+      migrationTasks, fetchMigrationTasks, toggleTaskComplete, regenerateMigrationTasks, applyTemplateToNotStartedMigrations,
       taskNotes, fetchTaskNotes, addTaskNote,
     }}>
       {children}
