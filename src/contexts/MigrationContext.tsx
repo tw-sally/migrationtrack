@@ -412,7 +412,7 @@ export function MigrationProvider({ children }: { children: ReactNode }) {
     <MigrationContext.Provider value={{
       templates, templatesLoading, fetchTemplates,
       addTemplate, updateTemplate, deleteTemplate,
-      addTemplateTask, updateTemplateTask, deleteTemplateTask, updateMilestoneOffset,
+      addTemplateTask, updateTemplateTask, deleteTemplateTask, updateMilestoneOffset, deleteMilestoneOffset,
       migrations, migrationsLoading, fetchMigrations, addMigration, updateMigration, deleteMigration,
       migrationTasks, fetchMigrationTasks, toggleTaskComplete, regenerateMigrationTasks, applyTemplateToNotStartedMigrations,
       taskNotes, fetchTaskNotes, addTaskNote,
