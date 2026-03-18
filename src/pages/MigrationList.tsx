@@ -50,6 +50,36 @@ export default function MigrationList() {
   const { migrations, migrationsLoading, templates, deleteMigration } = useMigrationData();
   const templateMap = useMemo(() => Object.fromEntries(templates.map(t => [t.id, t.name])), [templates]);
 
+  // Fetch all tasks to compute delay status
+  const [allTasks, setAllTasks] = useState<MigrationTaskDB[]>([]);
+  useEffect(() => {
+    if (migrations.length === 0) return;
+    supabase.from("migration_tasks").select("*").order("order")
+      .then(({ data }) => setAllTasks((data || []) as MigrationTaskDB[]));
+  }, [migrations]);
+
+  // Compute which migrations have delayed tasks
+  const delayedMigrationIds = useMemo(() => {
+    const today = new Date().toISOString().split("T")[0];
+    const ids = new Set<string>();
+    migrations.forEach(m => {
+      if (m.overall_status === "completed") return;
+      const phasesDates = [
+        { key: "D-3M", date: m.d_minus_3m },
+        { key: "D-2M", date: m.d_minus_2m },
+        { key: "D-1M", date: m.d_minus_1m },
+        { key: "D-Day", date: m.migration_date },
+        { key: "Post", date: m.migration_date },
+      ];
+      phasesDates.forEach(phase => {
+        if (!phase.date || today < phase.date) return;
+        const tasksInPhase = allTasks.filter(t => t.migration_id === m.id && t.milestone === phase.key && t.status !== "completed");
+        if (tasksInPhase.length > 0) ids.add(m.id);
+      });
+    });
+    return ids;
+  }, [migrations, allTasks]);
+
   const taskOwners = [...new Set(migrations.map(m => m.task_owner).filter(Boolean))].sort();
   const phases = [...new Set(migrations.map(m => m.phase).filter(Boolean))].sort();
   const dbids = [...new Set(migrations.map(m => m.dbid).filter(Boolean))].sort();
@@ -69,7 +99,13 @@ export default function MigrationList() {
 
   const filtered = useMemo(() => {
     return migrationsWithStage.filter(m => {
-      if (statusFilter !== "all" && m.overall_status !== statusFilter) return false;
+      if (statusFilter !== "all") {
+        if (statusFilter === "delayed") {
+          if (!delayedMigrationIds.has(m.id)) return false;
+        } else {
+          if (m.overall_status !== statusFilter) return false;
+        }
+      }
       if (dbaFilter !== "all" && m.task_owner !== dbaFilter) return false;
       if (phaseFilter !== "all" && m.phase !== phaseFilter) return false;
       if (stageFilter !== "all" && m.stage !== stageFilter) return false;
@@ -79,7 +115,7 @@ export default function MigrationList() {
       if (prodTestFilter !== "all" && m.prod_or_test !== prodTestFilter) return false;
       return true;
     });
-  }, [migrationsWithStage, statusFilter, dbaFilter, phaseFilter, stageFilter, dbTypeFilter, dbidFilter, monthFilter, prodTestFilter]);
+  }, [migrationsWithStage, statusFilter, dbaFilter, phaseFilter, stageFilter, dbTypeFilter, dbidFilter, monthFilter, prodTestFilter, delayedMigrationIds]);
 
   const stageOrder: Record<string, number> = { "D-3M": 0, "D-2M": 1, "D-1M": 2, "D-Day": 3, "Post": 4 };
 
