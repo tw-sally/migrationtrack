@@ -306,7 +306,7 @@ export default function AccountManagement() {
   };
 
   const handleBatchCreateDBAs = async () => {
-    const existingKeys = users.map(u => (u.windows_account || u.display_name || "").toUpperCase());
+    const existingKeys = users.map(u => (u.display_name || "").toUpperCase());
     const toCreate = DBA_LIST.filter(d => !existingKeys.includes(d.toUpperCase()));
     if (toCreate.length === 0) {
       toast.info("所有 DBA 帳號已存在");
