@@ -429,7 +429,7 @@ export default function AccountManagement() {
                     <TableRow key={u.id}>
                       <TableCell className="font-medium">{u.display_name}</TableCell>
                       <TableCell>{u.email}</TableCell>
-                      <TableCell>{u.windows_account || "-"}</TableCell>
+                      
                       <TableCell>
                         {u.roles.includes("admin") ? (
                           <Badge variant="default" className="gap-1">
