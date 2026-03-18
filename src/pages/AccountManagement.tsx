@@ -214,8 +214,7 @@ export default function AccountManagement() {
     return <SelfAccountView />;
   }
 
-  const handleWindowsAccountChange = (val: string) => {
-    setNewWindowsAccount(val);
+  const handleAccountChange = (val: string) => {
     setNewDisplayName(val);
     setNewEmail(val ? `${val.toLowerCase()}@test.com` : "");
   };
