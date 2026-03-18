@@ -27,15 +27,21 @@ export default function MyTasks() {
     }
   }, [displayName, taskOwners, selectedOwner]);
 
+  const myMigrationIds = migrations.filter(m => m.task_owner === selectedOwner).map(m => m.id);
+
   useEffect(() => {
-    if (!selectedOwner) return;
+    if (!selectedOwner || myMigrationIds.length === 0) {
+      setAllTasks([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    supabase.from("migration_tasks").select("*").eq("assignee", selectedOwner).order("order")
+    supabase.from("migration_tasks").select("*").in("migration_id", myMigrationIds).order("order")
       .then(({ data }) => {
         setAllTasks((data || []) as MigrationTaskDB[]);
         setLoading(false);
       });
-  }, [selectedOwner]);
+  }, [selectedOwner, myMigrationIds.join(",")]);
 
   const myMigrations = migrations.filter(m => m.task_owner === selectedOwner && m.overall_status !== "completed").sort((a, b) => a.migration_date.localeCompare(b.migration_date));
   const prodMigrations = myMigrations.filter(m => m.prod_or_test === "PROD");
