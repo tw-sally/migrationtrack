@@ -320,7 +320,6 @@ export default function AccountManagement() {
           password: "123456",
           display_name: wa,
           role: "dba",
-          windows_account: wa,
         });
         created++;
       } catch (err: any) {
