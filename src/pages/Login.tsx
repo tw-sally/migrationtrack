@@ -8,7 +8,7 @@ import { Loader2, Database } from "lucide-react";
 
 export default function Login() {
   const { signIn } = useAuth();
-  const [email, setEmail] = useState("");
+  const [account, setAccount] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -17,6 +17,7 @@ export default function Login() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    const email = `${account.toLowerCase()}@test.com`;
     const { error } = await signIn(email, password);
     if (error) setError(error);
     setLoading(false);
@@ -37,8 +38,8 @@ export default function Login() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="admin@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
+              <Label htmlFor="account">Account</Label>
+              <Input id="account" type="text" placeholder="e.g. WYCHIANG" value={account} onChange={e => setAccount(e.target.value)} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
