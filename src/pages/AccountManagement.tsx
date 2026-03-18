@@ -371,16 +371,8 @@ export default function AccountManagement() {
               </DialogHeader>
               <div className="space-y-4 pt-2">
                 <div className="space-y-2">
-                  <Label>Windows Account</Label>
-                  <Input
-                    value={newWindowsAccount}
-                    onChange={(e) => handleWindowsAccountChange(e.target.value)}
-                    placeholder="例: STRUANB"
-                  />
-                </div>
-                <div className="space-y-2">
                   <Label>Account</Label>
-                  <Input value={newDisplayName} onChange={(e) => setNewDisplayName(e.target.value)} placeholder="例: STRUANB" />
+                  <Input value={newDisplayName} onChange={(e) => handleAccountChange(e.target.value)} placeholder="例: STRUANB" />
                 </div>
                 <div className="space-y-2">
                   <Label>Email</Label>
