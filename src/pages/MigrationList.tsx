@@ -11,7 +11,8 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, ArrowUp, ArrowDown, ArrowUpDown, Loader2, Pencil, ChevronsUpDown, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useMigrationData, MigrationDB } from "@/contexts/MigrationContext";
+import { useMigrationData, MigrationDB, MigrationTaskDB } from "@/contexts/MigrationContext";
+import { supabase } from "@/integrations/supabase/client";
 import { AddMigrationDialog } from "@/components/AddMigrationDialog";
 import { EditMigrationDialog } from "@/components/EditMigrationDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
