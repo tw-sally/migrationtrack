@@ -228,11 +228,10 @@ export default function AccountManagement() {
         password: newPassword,
         display_name: newDisplayName || newEmail,
         role: newRole,
-        windows_account: newWindowsAccount,
       });
       toast.success("帳號建立成功");
       setDialogOpen(false);
-      setNewWindowsAccount("");
+      setNewEmail("");
       setNewEmail("");
       setNewPassword("123456");
       setNewDisplayName("");
