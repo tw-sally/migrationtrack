@@ -178,7 +178,7 @@ export default function AccountManagement() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [newWindowsAccount, setNewWindowsAccount] = useState("");
+  
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("123456");
   const [newDisplayName, setNewDisplayName] = useState("");
@@ -186,7 +186,7 @@ export default function AccountManagement() {
   const [deleteTarget, setDeleteTarget] = useState<ManagedUser | null>(null);
   const [editTarget, setEditTarget] = useState<ManagedUser | null>(null);
   const [editDisplayName, setEditDisplayName] = useState("");
-  const [editWindowsAccount, setEditWindowsAccount] = useState("");
+  
   const [editPassword, setEditPassword] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [saving, setSaving] = useState(false);
@@ -214,8 +214,7 @@ export default function AccountManagement() {
     return <SelfAccountView />;
   }
 
-  const handleWindowsAccountChange = (val: string) => {
-    setNewWindowsAccount(val);
+  const handleAccountChange = (val: string) => {
     setNewDisplayName(val);
     setNewEmail(val ? `${val.toLowerCase()}@test.com` : "");
   };
@@ -229,11 +228,10 @@ export default function AccountManagement() {
         password: newPassword,
         display_name: newDisplayName || newEmail,
         role: newRole,
-        windows_account: newWindowsAccount,
       });
       toast.success("帳號建立成功");
       setDialogOpen(false);
-      setNewWindowsAccount("");
+      setNewEmail("");
       setNewEmail("");
       setNewPassword("123456");
       setNewDisplayName("");
@@ -281,7 +279,7 @@ export default function AccountManagement() {
   const openEdit = (u: ManagedUser) => {
     setEditTarget(u);
     setEditDisplayName(u.display_name);
-    setEditWindowsAccount(u.windows_account || "");
+    setEditPassword("");
     setEditPassword("");
     setEditEmail(u.email);
   };
@@ -293,7 +291,6 @@ export default function AccountManagement() {
       const params: Record<string, unknown> = {
         user_id: editTarget.id,
         display_name: editDisplayName,
-        windows_account: editWindowsAccount,
       };
       if (editPassword) params.password = editPassword;
       if (editEmail && editEmail !== editTarget.email) params.email = editEmail;
@@ -309,7 +306,7 @@ export default function AccountManagement() {
   };
 
   const handleBatchCreateDBAs = async () => {
-    const existingKeys = users.map(u => (u.windows_account || u.display_name || "").toUpperCase());
+    const existingKeys = users.map(u => (u.display_name || "").toUpperCase());
     const toCreate = DBA_LIST.filter(d => !existingKeys.includes(d.toUpperCase()));
     if (toCreate.length === 0) {
       toast.info("所有 DBA 帳號已存在");
@@ -323,7 +320,6 @@ export default function AccountManagement() {
           password: "123456",
           display_name: wa,
           role: "dba",
-          windows_account: wa,
         });
         created++;
       } catch (err: any) {
@@ -342,15 +338,6 @@ export default function AccountManagement() {
           <p className="text-muted-foreground">管理系統使用者帳號</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={async () => {
-            try {
-              const res = await callManageUsers("batch_set_windows_account");
-              toast.success(res.message);
-              fetchUsers();
-            } catch (err: any) { toast.error(err.message); }
-          }}>
-            同步 Windows Account
-          </Button>
           <Button variant="outline" onClick={handleBatchCreateDBAs}>
             批量建立 DBA 帳號
           </Button>
@@ -375,16 +362,8 @@ export default function AccountManagement() {
               </DialogHeader>
               <div className="space-y-4 pt-2">
                 <div className="space-y-2">
-                  <Label>Windows Account</Label>
-                  <Input
-                    value={newWindowsAccount}
-                    onChange={(e) => handleWindowsAccountChange(e.target.value)}
-                    placeholder="例: STRUANB"
-                  />
-                </div>
-                <div className="space-y-2">
                   <Label>Account</Label>
-                  <Input value={newDisplayName} onChange={(e) => setNewDisplayName(e.target.value)} placeholder="例: STRUANB" />
+                  <Input value={newDisplayName} onChange={(e) => handleAccountChange(e.target.value)} placeholder="例: STRUANB" />
                 </div>
                 <div className="space-y-2">
                   <Label>Email</Label>
@@ -435,7 +414,7 @@ export default function AccountManagement() {
                 <TableRow>
                   <TableHead>Account</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Windows Account</TableHead>
+                  
                   <TableHead>角色</TableHead>
                   <TableHead>狀態</TableHead>
                   <TableHead>建立時間</TableHead>
@@ -450,7 +429,7 @@ export default function AccountManagement() {
                     <TableRow key={u.id}>
                       <TableCell className="font-medium">{u.display_name}</TableCell>
                       <TableCell>{u.email}</TableCell>
-                      <TableCell>{u.windows_account || "-"}</TableCell>
+                      
                       <TableCell>
                         {u.roles.includes("admin") ? (
                           <Badge variant="default" className="gap-1">
@@ -544,12 +523,8 @@ export default function AccountManagement() {
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="space-y-2">
-              <Label>Windows Account</Label>
-              <Input value={editWindowsAccount} onChange={(e) => setEditWindowsAccount(e.target.value)} />
-            </div>
-            <div className="space-y-2">
               <Label>Account</Label>
-              <Input value={editDisplayName} onChange={(e) => setEditDisplayName(e.target.value)} />
+              <Input value={editDisplayName} disabled className="opacity-60" />
             </div>
             <div className="space-y-2">
               <Label>Email</Label>
