@@ -279,7 +279,7 @@ export default function AccountManagement() {
   const openEdit = (u: ManagedUser) => {
     setEditTarget(u);
     setEditDisplayName(u.display_name);
-    setEditWindowsAccount(u.windows_account || "");
+    setEditPassword("");
     setEditPassword("");
     setEditEmail(u.email);
   };
