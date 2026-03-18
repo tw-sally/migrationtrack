@@ -203,7 +203,7 @@ export default function AccountManagement() {
       try {
         await callManageUsers("create", {
           email: `${wa.toLowerCase()}@test.com`,
-          password: "1234",
+          password: "123456",
           display_name: wa,
           role: "dba",
           windows_account: wa,
