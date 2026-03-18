@@ -39,10 +39,36 @@ Deno.serve(async (req: Request) => {
       _user_id: caller.id,
       _role: "admin",
     });
-    if (!isAdmin) return json({ error: "Admin access required" }, 403);
 
     const body = await req.json();
     const { action } = body;
+
+    // === Self-service actions (any authenticated user) ===
+
+    if (action === "get_self") {
+      const { data: profile } = await supabaseAdmin.from("profiles").select("display_name").eq("id", caller.id).single();
+      const { data: userAuth } = await supabaseAdmin.auth.admin.getUserById(caller.id);
+      return json({
+        id: caller.id,
+        email: caller.email,
+        display_name: profile?.display_name || caller.email,
+        windows_account: userAuth?.user?.user_metadata?.windows_account || "",
+      });
+    }
+
+    if (action === "update_self") {
+      const { password, email } = body;
+      const updateData: Record<string, unknown> = {};
+      if (password) updateData.password = password;
+      if (email) updateData.email = email;
+      if (Object.keys(updateData).length === 0) return json({ error: "Nothing to update" }, 400);
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(caller.id, updateData);
+      if (error) throw error;
+      return json({ message: "Account updated" });
+    }
+
+    // === Admin-only actions below ===
+    if (!isAdmin) return json({ error: "Admin access required" }, 403);
 
     if (action === "list") {
       const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
@@ -113,10 +139,13 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "update") {
-      const { user_id, display_name, windows_account } = body;
-      await supabaseAdmin.auth.admin.updateUserById(user_id, {
+      const { user_id, display_name, windows_account, password, email } = body;
+      const authUpdate: Record<string, unknown> = {
         user_metadata: { display_name, windows_account: windows_account || "" },
-      });
+      };
+      if (password) authUpdate.password = password;
+      if (email) authUpdate.email = email;
+      await supabaseAdmin.auth.admin.updateUserById(user_id, authUpdate);
       await supabaseAdmin.from("profiles").update({ display_name }).eq("id", user_id);
       return json({ message: "User updated" });
     }

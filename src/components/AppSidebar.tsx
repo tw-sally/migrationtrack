@@ -1,6 +1,7 @@
-import { Database, LayoutDashboard, ListTodo, Calendar, Settings, User, ChevronLeft, Users } from "lucide-react";
+import { Database, LayoutDashboard, ListTodo, Calendar, Settings, User, Users } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar,
   SidebarContent,
@@ -15,13 +16,14 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const adminItems = [
+const baseAdminItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Migration List", url: "/migrations", icon: Database },
   { title: "Calendar", url: "/calendar", icon: Calendar },
   { title: "Task Templates", url: "/templates", icon: Settings },
-  { title: "帳號管理", url: "/accounts", icon: Users },
 ];
+
+const accountItem = { title: "帳號管理", url: "/accounts", icon: Users };
 
 const dbaItems = [
   { title: "My Tasks", url: "/my-tasks", icon: ListTodo },
@@ -31,6 +33,10 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const { roles, displayName } = useAuth();
+
+  const isAdmin = roles.includes("admin");
+  const adminItems = isAdmin ? [...baseAdminItems, accountItem] : baseAdminItems;
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -91,7 +97,7 @@ export function AppSidebar() {
         {!collapsed && (
           <div className="flex items-center gap-2 text-sidebar-foreground/70">
             <User className="h-4 w-4" />
-            <span className="text-xs">Admin (Demo)</span>
+            <span className="text-xs">{displayName || "User"}</span>
           </div>
         )}
       </SidebarFooter>
