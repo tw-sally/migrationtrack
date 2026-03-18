@@ -74,7 +74,7 @@ export default function AccountManagement() {
   const [creating, setCreating] = useState(false);
   const [newWindowsAccount, setNewWindowsAccount] = useState("");
   const [newEmail, setNewEmail] = useState("");
-  const [newPassword, setNewPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("123456");
   const [newDisplayName, setNewDisplayName] = useState("");
   const [newRole, setNewRole] = useState("user");
   const [deleteTarget, setDeleteTarget] = useState<ManagedUser | null>(null);
