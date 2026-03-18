@@ -544,12 +544,8 @@ export default function AccountManagement() {
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="space-y-2">
-              <Label>Windows Account</Label>
-              <Input value={editWindowsAccount} onChange={(e) => setEditWindowsAccount(e.target.value)} />
-            </div>
-            <div className="space-y-2">
               <Label>Account</Label>
-              <Input value={editDisplayName} onChange={(e) => setEditDisplayName(e.target.value)} />
+              <Input value={editDisplayName} disabled className="opacity-60" />
             </div>
             <div className="space-y-2">
               <Label>Email</Label>
