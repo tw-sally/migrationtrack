@@ -29,10 +29,12 @@ Deno.serve(async (req: Request) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return json({ error: "Missing authorization" }, 401);
 
+    const token = authHeader.replace("Bearer ", "");
     const anonClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user: caller } } = await anonClient.auth.getUser();
+    const { data: { user: caller }, error: authError } = await anonClient.auth.getUser(token);
+    if (authError || !caller) return json({ error: "Unauthorized" }, 401);
     if (!caller) return json({ error: "Unauthorized" }, 401);
 
     const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
