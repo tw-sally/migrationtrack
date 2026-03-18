@@ -291,7 +291,6 @@ export default function AccountManagement() {
       const params: Record<string, unknown> = {
         user_id: editTarget.id,
         display_name: editDisplayName,
-        windows_account: editWindowsAccount,
       };
       if (editPassword) params.password = editPassword;
       if (editEmail && editEmail !== editTarget.email) params.email = editEmail;
