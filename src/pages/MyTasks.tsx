@@ -207,10 +207,6 @@ export default function MyTasks() {
                 phaseDate.setHours(0, 0, 0, 0);
                 if (todayLocal >= phaseDate) { currentPhase = phases[i]; break; }
               }
-              const phaseTasks = allTasks.filter(t => t.migration_id === m.id && t.milestone === currentPhase.key).sort((a, b) => a.order - b.order);
-              const firstTask = phaseTasks[0];
-              const isDelayNotStarted = firstTask && firstTask.status !== "completed" && new Date(firstTask.due_date) < todayLocal;
-
               return (
                 <div key={m.id} className="grid grid-cols-8 gap-4 items-center px-3 py-2.5 border-b border-border last:border-b-0 hover:bg-muted/30 cursor-pointer transition-colors" onClick={() => navigate(`/migrations/${m.id}`)}>
                   <span className="font-mono font-medium text-sm">{m.dbid}</span>
@@ -220,7 +216,7 @@ export default function MyTasks() {
                   <span className="text-xs font-mono">{currentPhase.label}: {currentPhase.date}</span>
                   <span className="text-xs font-mono">{m.migration_date}</span>
                   <ProgressBar value={m.completion_percent} className="w-full" />
-                  {isDelayNotStarted ? (
+                  {delayDbIds.has(m.id) ? (
                     <Badge variant="outline" className="text-xs w-fit bg-destructive/15 text-destructive border-destructive/30 font-medium">Delay</Badge>
                   ) : (
                     <StatusBadge status={m.overall_status} />
