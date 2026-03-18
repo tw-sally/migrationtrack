@@ -245,6 +245,14 @@ export default function AccountManagement() {
           <Button variant="outline" onClick={handleBatchCreateDBAs}>
             批量建立 DBA 帳號
           </Button>
+          <Button variant="outline" onClick={async () => {
+            try {
+              const res = await callManageUsers("reset_all_passwords", { password: "123456" });
+              toast.success(res.message);
+            } catch (err: any) { toast.error(err.message); }
+          }}>
+            重設所有密碼
+          </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button>
