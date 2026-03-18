@@ -38,7 +38,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Users, Shield, UserIcon, CheckCircle, Ban, Loader2, Trash2, Pencil } from "lucide-react";
+import { Plus, Users, Shield, CheckCircle, Ban, Loader2, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -66,6 +66,112 @@ async function callManageUsers(action: string, params: Record<string, unknown> =
   return res.data;
 }
 
+// ─── Non-admin self-service view ───
+function SelfAccountView() {
+  const [loading, setLoading] = useState(true);
+  const [selfData, setSelfData] = useState<{ id: string; email: string; display_name: string; windows_account: string } | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await callManageUsers("get_self");
+        setSelfData(data);
+        setNewEmail(data.email);
+      } catch (err: any) {
+        toast.error("載入帳號資料失敗: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const params: Record<string, unknown> = {};
+      if (newPassword) params.password = newPassword;
+      if (newEmail && newEmail !== selfData?.email) params.email = newEmail;
+      await callManageUsers("update_self", params);
+      toast.success("帳號已更新");
+      setEditOpen(false);
+      setNewPassword("");
+    } catch (err: any) {
+      toast.error("更新失敗: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">我的帳號</h1>
+        <p className="text-muted-foreground">管理您的帳號設定</p>
+      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">帳號資訊</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-muted-foreground text-xs">Account</Label>
+              <p className="font-medium">{selfData?.display_name}</p>
+            </div>
+            <div>
+              <Label className="text-muted-foreground text-xs">Email</Label>
+              <p className="font-medium">{selfData?.email}</p>
+            </div>
+          </div>
+          <Button variant="outline" onClick={() => setEditOpen(true)}>
+            <Pencil className="h-4 w-4 mr-2" />
+            編輯帳號
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>編輯帳號</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label>Account</Label>
+              <Input value={selfData?.display_name || ""} disabled className="opacity-60" />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>新密碼（留空則不修改）</Label>
+              <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••" />
+            </div>
+            <Button onClick={handleSave} disabled={saving} className="w-full">
+              {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              儲存
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// ─── Admin view ───
 export default function AccountManagement() {
   const { roles, user } = useAuth();
   const [users, setUsers] = useState<ManagedUser[]>([]);
@@ -81,9 +187,16 @@ export default function AccountManagement() {
   const [editTarget, setEditTarget] = useState<ManagedUser | null>(null);
   const [editDisplayName, setEditDisplayName] = useState("");
   const [editWindowsAccount, setEditWindowsAccount] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [editEmail, setEditEmail] = useState("");
   const [saving, setSaving] = useState(false);
 
   const isAdmin = roles.includes("admin");
+
+  // Non-admin: show self-service view
+  if (!isAdmin) {
+    return <SelfAccountView />;
+  }
 
   const fetchUsers = async () => {
     try {
@@ -101,7 +214,6 @@ export default function AccountManagement() {
     if (isAdmin) fetchUsers();
   }, [isAdmin]);
 
-  // When windows account changes, auto-fill defaults
   const handleWindowsAccountChange = (val: string) => {
     setNewWindowsAccount(val);
     setNewDisplayName(val);
@@ -123,7 +235,7 @@ export default function AccountManagement() {
       setDialogOpen(false);
       setNewWindowsAccount("");
       setNewEmail("");
-      setNewPassword("");
+      setNewPassword("123456");
       setNewDisplayName("");
       setNewRole("user");
       fetchUsers();
@@ -170,17 +282,22 @@ export default function AccountManagement() {
     setEditTarget(u);
     setEditDisplayName(u.display_name);
     setEditWindowsAccount(u.windows_account || "");
+    setEditPassword("");
+    setEditEmail(u.email);
   };
 
   const handleUpdate = async () => {
     if (!editTarget) return;
     setSaving(true);
     try {
-      await callManageUsers("update", {
+      const params: Record<string, unknown> = {
         user_id: editTarget.id,
         display_name: editDisplayName,
         windows_account: editWindowsAccount,
-      });
+      };
+      if (editPassword) params.password = editPassword;
+      if (editEmail && editEmail !== editTarget.email) params.email = editEmail;
+      await callManageUsers("update", params);
       toast.success("帳號已更新");
       setEditTarget(null);
       fetchUsers();
@@ -216,14 +333,6 @@ export default function AccountManagement() {
     toast.success(`已建立 ${created} 個 DBA 帳號`);
     fetchUsers();
   };
-
-  if (!isAdmin) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">您沒有權限存取此頁面</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -274,8 +383,8 @@ export default function AccountManagement() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>顯示名稱</Label>
-                  <Input value={newDisplayName} onChange={(e) => setNewDisplayName(e.target.value)} placeholder="例: Sally" />
+                  <Label>Account</Label>
+                  <Input value={newDisplayName} onChange={(e) => setNewDisplayName(e.target.value)} placeholder="例: STRUANB" />
                 </div>
                 <div className="space-y-2">
                   <Label>Email</Label>
@@ -439,12 +548,16 @@ export default function AccountManagement() {
               <Input value={editWindowsAccount} onChange={(e) => setEditWindowsAccount(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>顯示名稱</Label>
+              <Label>Account</Label>
               <Input value={editDisplayName} onChange={(e) => setEditDisplayName(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>Email</Label>
-              <Input value={editTarget?.email || ""} disabled className="opacity-60" />
+              <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>新密碼（留空則不修改）</Label>
+              <Input type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} placeholder="••••••" />
             </div>
             <Button onClick={handleUpdate} disabled={saving} className="w-full">
               {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
