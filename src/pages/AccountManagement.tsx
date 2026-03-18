@@ -74,7 +74,7 @@ export default function AccountManagement() {
   const [creating, setCreating] = useState(false);
   const [newWindowsAccount, setNewWindowsAccount] = useState("");
   const [newEmail, setNewEmail] = useState("");
-  const [newPassword, setNewPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("123456");
   const [newDisplayName, setNewDisplayName] = useState("");
   const [newRole, setNewRole] = useState("user");
   const [deleteTarget, setDeleteTarget] = useState<ManagedUser | null>(null);
@@ -203,7 +203,7 @@ export default function AccountManagement() {
       try {
         await callManageUsers("create", {
           email: `${wa.toLowerCase()}@test.com`,
-          password: "1234",
+          password: "123456",
           display_name: wa,
           role: "dba",
           windows_account: wa,
@@ -244,6 +244,14 @@ export default function AccountManagement() {
           </Button>
           <Button variant="outline" onClick={handleBatchCreateDBAs}>
             批量建立 DBA 帳號
+          </Button>
+          <Button variant="outline" onClick={async () => {
+            try {
+              const res = await callManageUsers("reset_all_passwords", { password: "123456" });
+              toast.success(res.message);
+            } catch (err: any) { toast.error(err.message); }
+          }}>
+            重設所有密碼
           </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
