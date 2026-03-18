@@ -14,18 +14,20 @@ export default function MyTasks() {
   const { migrations } = useMigrationData();
   const { displayName } = useAuth();
   const taskOwners = [...new Set(migrations.map(m => m.task_owner).filter(Boolean))].sort();
-  const [selectedOwner, setSelectedOwner] = useState("");
+  const defaultOwner = displayName && taskOwners.includes(displayName) ? displayName : taskOwners[0] || "";
+  const [selectedOwner, setSelectedOwner] = useState(defaultOwner);
   const [allTasks, setAllTasks] = useState<MigrationTaskDB[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Reset to logged-in user's owner when navigating back to this page
   useEffect(() => {
-    if (!selectedOwner && displayName && taskOwners.includes(displayName)) {
+    if (displayName && taskOwners.includes(displayName)) {
       setSelectedOwner(displayName);
-    } else if (!selectedOwner && taskOwners.length > 0) {
+    } else if (taskOwners.length > 0 && !taskOwners.includes(selectedOwner)) {
       setSelectedOwner(taskOwners[0]);
     }
-  }, [displayName, taskOwners, selectedOwner]);
+  }, [displayName, taskOwners.join(",")]);
 
   const myMigrationIds = migrations.filter(m => m.task_owner === selectedOwner).map(m => m.id);
 
