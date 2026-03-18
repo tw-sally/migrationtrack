@@ -58,24 +58,16 @@ export default function MigrationList() {
       .then(({ data }) => setAllTasks((data || []) as MigrationTaskDB[]));
   }, [migrations]);
 
-  // Compute which migrations have delayed tasks
+  // Compute which migrations have delayed tasks (end_date passed & not completed)
   const delayedMigrationIds = useMemo(() => {
     const today = new Date().toISOString().split("T")[0];
     const ids = new Set<string>();
     migrations.forEach(m => {
       if (m.overall_status === "completed") return;
-      const phasesDates = [
-        { key: "D-3M", date: m.d_minus_3m },
-        { key: "D-2M", date: m.d_minus_2m },
-        { key: "D-1M", date: m.d_minus_1m },
-        { key: "D-Day", date: m.migration_date },
-        { key: "Post", date: m.migration_date },
-      ];
-      phasesDates.forEach(phase => {
-        if (!phase.date || today < phase.date) return;
-        const tasksInPhase = allTasks.filter(t => t.migration_id === m.id && t.milestone === phase.key && t.status !== "completed");
-        if (tasksInPhase.length > 0) ids.add(m.id);
-      });
+      const hasDelayedTask = allTasks.some(t =>
+        t.migration_id === m.id && t.status !== "completed" && t.end_date && today > t.end_date
+      );
+      if (hasDelayedTask) ids.add(m.id);
     });
     return ids;
   }, [migrations, allTasks]);
