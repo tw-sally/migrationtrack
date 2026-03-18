@@ -414,7 +414,7 @@ export default function AccountManagement() {
                 <TableRow>
                   <TableHead>Account</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Windows Account</TableHead>
+                  
                   <TableHead>角色</TableHead>
                   <TableHead>狀態</TableHead>
                   <TableHead>建立時間</TableHead>
