@@ -178,7 +178,7 @@ export default function AccountManagement() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [newWindowsAccount, setNewWindowsAccount] = useState("");
+  
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("123456");
   const [newDisplayName, setNewDisplayName] = useState("");
