@@ -203,7 +203,7 @@ export default function AccountManagement() {
       try {
         await callManageUsers("create", {
           email: `${wa.toLowerCase()}@test.com`,
-          password: "changeme123",
+          password: "1234",
           display_name: wa,
           role: "dba",
           windows_account: wa,
@@ -316,7 +316,7 @@ export default function AccountManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>顯示名稱</TableHead>
+                  <TableHead>Account</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Windows Account</TableHead>
                   <TableHead>角色</TableHead>

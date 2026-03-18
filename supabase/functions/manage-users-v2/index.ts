@@ -129,6 +129,19 @@ Deno.serve(async (req: Request) => {
       return json({ message: "User deleted" });
     }
 
+    if (action === "reset_all_passwords") {
+      const { password } = body;
+      if (!password) return json({ error: "password required" }, 400);
+      const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
+      if (error) throw error;
+      let updated = 0;
+      for (const u of users ?? []) {
+        await supabaseAdmin.auth.admin.updateUserById(u.id, { password });
+        updated++;
+      }
+      return json({ message: `Reset ${updated} user passwords` });
+    }
+
     return json({ error: "Unknown action: " + action }, 400);
   } catch (e: any) {
     return json({ error: e.message || String(e) }, 400);
