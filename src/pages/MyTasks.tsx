@@ -16,6 +16,9 @@ export default function MyTasks() {
   const taskOwners = [...new Set(migrations.map(m => m.task_owner).filter(Boolean))].sort();
   const defaultOwner = displayName && taskOwners.includes(displayName) ? displayName : taskOwners[0] || "";
   const [selectedOwner, setSelectedOwner] = useState(defaultOwner);
+  const [allTasks, setAllTasks] = useState<MigrationTaskDB[]>([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   // Reset to logged-in user's owner when navigating back to this page
   useEffect(() => {
