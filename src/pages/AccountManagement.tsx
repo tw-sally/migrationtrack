@@ -193,11 +193,6 @@ export default function AccountManagement() {
 
   const isAdmin = roles.includes("admin");
 
-  // Non-admin: show self-service view
-  if (!isAdmin) {
-    return <SelfAccountView />;
-  }
-
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -213,6 +208,11 @@ export default function AccountManagement() {
   useEffect(() => {
     if (isAdmin) fetchUsers();
   }, [isAdmin]);
+
+  // Non-admin: show self-service view
+  if (!isAdmin) {
+    return <SelfAccountView />;
+  }
 
   const handleWindowsAccountChange = (val: string) => {
     setNewWindowsAccount(val);
