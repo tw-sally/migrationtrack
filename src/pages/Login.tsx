@@ -16,8 +16,18 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    const normalizedAccount = account.trim();
+    if (!normalizedAccount) {
+      setError("Please enter your account");
+      return;
+    }
+
     setLoading(true);
-    const email = `${account.toLowerCase()}@test.com`;
+    const email = normalizedAccount.includes("@")
+      ? normalizedAccount.toLowerCase()
+      : `${normalizedAccount.toLowerCase()}@test.com`;
+
     const { error } = await signIn(email, password);
     if (error) setError(error);
     setLoading(false);
@@ -39,7 +49,14 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="account">Account</Label>
-              <Input id="account" type="text" placeholder="e.g. WYCHIANG" value={account} onChange={e => setAccount(e.target.value)} required />
+              <Input
+                id="account"
+                type="text"
+                placeholder="e.g. WYCHIANG or wychiang@test.com"
+                value={account}
+                onChange={e => setAccount(e.target.value)}
+                required
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>

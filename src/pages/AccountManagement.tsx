@@ -57,11 +57,21 @@ const DBA_LIST = ["STRUANB", "WYCHIANG", "YHLUZS", "JRLULAI", "RXYEA", "CHWUAZZI
 const MANAGE_USERS_FUNCTION = "manage-users-v2";
 
 async function callManageUsers(action: string, params: Record<string, unknown> = {}) {
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  const accessToken = session?.access_token;
+  if (sessionError || !accessToken) {
+    throw new Error("登入已失效，請重新登入後再試");
+  }
+
   const res = await supabase.functions.invoke(MANAGE_USERS_FUNCTION, {
     body: { action, ...params },
-    headers: { Authorization: `Bearer ${session?.access_token}` },
+    headers: { Authorization: `Bearer ${accessToken}` },
   });
+
   if (res.error) throw new Error(res.error.message);
   return res.data;
 }
