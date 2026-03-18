@@ -316,7 +316,7 @@ export default function AccountManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>顯示名稱</TableHead>
+                  <TableHead>Account</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Windows Account</TableHead>
                   <TableHead>角色</TableHead>
