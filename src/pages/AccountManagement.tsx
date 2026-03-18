@@ -186,7 +186,7 @@ export default function AccountManagement() {
   const [deleteTarget, setDeleteTarget] = useState<ManagedUser | null>(null);
   const [editTarget, setEditTarget] = useState<ManagedUser | null>(null);
   const [editDisplayName, setEditDisplayName] = useState("");
-  const [editWindowsAccount, setEditWindowsAccount] = useState("");
+  
   const [editPassword, setEditPassword] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [saving, setSaving] = useState(false);
