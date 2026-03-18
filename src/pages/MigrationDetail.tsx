@@ -238,9 +238,6 @@ export default function MigrationDetail() {
           </div>
           <p className="text-muted-foreground">{migration.db_type}</p>
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={async () => { if (id) { setLoading(true); setLocalStatusOverrides({}); setLocalDateOverrides({}); setNoteInput({}); await regenerateMigrationTasks(id); setLoading(false); } }}>
-          <RefreshCw className="h-3.5 w-3.5" /> Regenerate Tasks
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
