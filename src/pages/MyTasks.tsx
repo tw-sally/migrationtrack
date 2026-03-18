@@ -221,7 +221,7 @@ export default function MyTasks() {
                   <span className="text-xs font-mono">{m.migration_date}</span>
                   <ProgressBar value={m.completion_percent} className="w-full" />
                   {isDelayNotStarted ? (
-                    <Badge variant="outline" className="text-xs w-fit bg-destructive/15 text-destructive border-destructive/30 font-medium">Delay - Not Started</Badge>
+                    <Badge variant="outline" className="text-xs w-fit bg-destructive/15 text-destructive border-destructive/30 font-medium">Delay</Badge>
                   ) : (
                     <StatusBadge status={m.overall_status} />
                   )}
