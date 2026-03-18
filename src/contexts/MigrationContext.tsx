@@ -234,10 +234,42 @@ export function MigrationProvider({ children }: { children: ReactNode }) {
   }, [fetchMigrations]);
 
   const updateMigration = useCallback(async (id: string, data: Partial<Omit<MigrationDB, "id" | "created_at" | "updated_at">>) => {
+    // Check if milestone dates changed
+    const oldMigration = migrations.find(m => m.id === id);
+    const datesChanged = oldMigration && (
+      (data.migration_date && data.migration_date !== oldMigration.migration_date) ||
+      (data.d_minus_3m && data.d_minus_3m !== oldMigration.d_minus_3m) ||
+      (data.d_minus_2m && data.d_minus_2m !== oldMigration.d_minus_2m) ||
+      (data.d_minus_1m && data.d_minus_1m !== oldMigration.d_minus_1m)
+    );
+
     const { error } = await supabase.from("migrations").update(data).eq("id", id);
     if (error) { toast.error("Failed to update migration"); return; }
+
+    // If milestone dates changed, recalculate task due_date and end_date
+    if (datesChanged) {
+      const newDates = {
+        migration_date: data.migration_date || oldMigration!.migration_date,
+        d_minus_3m: data.d_minus_3m || oldMigration!.d_minus_3m,
+        d_minus_2m: data.d_minus_2m || oldMigration!.d_minus_2m,
+        d_minus_1m: data.d_minus_1m || oldMigration!.d_minus_1m,
+      };
+
+      const { data: tasks } = await supabase.from("migration_tasks").select("id, milestone").eq("migration_id", id);
+      if (tasks && tasks.length > 0) {
+        for (const task of tasks) {
+          let dueDate = newDates.migration_date;
+          if (task.milestone === "D-3M") dueDate = newDates.d_minus_3m;
+          else if (task.milestone === "D-2M") dueDate = newDates.d_minus_2m;
+          else if (task.milestone === "D-1M") dueDate = newDates.d_minus_1m;
+          const endDate = format(addMonths(parse(dueDate, "yyyy-MM-dd", new Date()), 1), "yyyy-MM-dd");
+          await supabase.from("migration_tasks").update({ due_date: dueDate, end_date: endDate }).eq("id", task.id);
+        }
+      }
+    }
+
     await fetchMigrations();
-  }, [fetchMigrations]);
+  }, [fetchMigrations, migrations]);
 
   const deleteMigration = useCallback(async (id: string) => {
     // Delete related tasks and notes first
