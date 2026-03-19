@@ -36,7 +36,7 @@ export function AppSidebar() {
   const { roles, displayName } = useAuth();
 
   const isAdmin = roles.includes("admin");
-  const adminItems = isAdmin ? [...baseAdminItems, accountItem] : baseAdminItems;
+  const adminItems = [...baseAdminItems, accountItem];
 
   const isActive = (path: string) => location.pathname === path;
 
