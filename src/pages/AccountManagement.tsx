@@ -52,7 +52,7 @@ interface ManagedUser {
   created_at: string;
 }
 
-const DBA_LIST = ["STRUANB", "WYCHIANG", "YHLUZS", "JRLULAI", "RXYEA", "CHWUAZZI", "HEHUANGB", "HMHSIEHC"];
+
 
 const MANAGE_USERS_FUNCTION = "manage-users-v2";
 
