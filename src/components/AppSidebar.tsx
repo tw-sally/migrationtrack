@@ -1,4 +1,4 @@
-import { Database, LayoutDashboard, ListTodo, Calendar, Settings, User, Users } from "lucide-react";
+import { Database, LayoutDashboard, ListTodo, Calendar, Settings, User, Users, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,7 +33,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { roles, displayName } = useAuth();
+  const { roles, displayName, signOut } = useAuth();
 
   const isAdmin = roles.includes("admin");
   const adminItems = [...baseAdminItems, accountItem];
@@ -93,13 +93,20 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
+      <SidebarFooter className="p-4 space-y-2">
         {!collapsed && (
           <div className="flex items-center gap-2 text-sidebar-foreground/70">
             <User className="h-4 w-4" />
             <span className="text-xs">{displayName || "User"}</span>
           </div>
         )}
+        <button
+          onClick={() => signOut()}
+          className="flex items-center gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors text-xs w-full"
+        >
+          <LogOut className="h-4 w-4" />
+          {!collapsed && <span>登出</span>}
+        </button>
       </SidebarFooter>
     </Sidebar>
   );
