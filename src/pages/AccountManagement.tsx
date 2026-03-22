@@ -52,7 +52,7 @@ interface ManagedUser {
   created_at: string;
 }
 
-const DBA_LIST = ["STRUANB", "WYCHIANG", "YHLUZS", "JRLULAI", "RXYEA", "CHWUAZZI", "HEHUANGB", "HMHSIEHC"];
+
 
 const MANAGE_USERS_FUNCTION = "manage-users-v2";
 
@@ -315,30 +315,6 @@ export default function AccountManagement() {
     }
   };
 
-  const handleBatchCreateDBAs = async () => {
-    const existingKeys = users.map(u => (u.display_name || "").toUpperCase());
-    const toCreate = DBA_LIST.filter(d => !existingKeys.includes(d.toUpperCase()));
-    if (toCreate.length === 0) {
-      toast.info("所有 DBA 帳號已存在");
-      return;
-    }
-    let created = 0;
-    for (const wa of toCreate) {
-      try {
-        await callManageUsers("create", {
-          email: `${wa.toLowerCase()}@test.com`,
-          password: "123456",
-          display_name: wa,
-          role: "dba",
-        });
-        created++;
-      } catch (err: any) {
-        console.error(`Failed to create ${wa}:`, err.message);
-      }
-    }
-    toast.success(`已建立 ${created} 個 DBA 帳號`);
-    fetchUsers();
-  };
 
   return (
     <div className="space-y-6">
@@ -348,17 +324,6 @@ export default function AccountManagement() {
           <p className="text-muted-foreground">管理系統使用者帳號</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleBatchCreateDBAs}>
-            批量建立 DBA 帳號
-          </Button>
-          <Button variant="outline" onClick={async () => {
-            try {
-              const res = await callManageUsers("reset_all_passwords", { password: "123456" });
-              toast.success(res.message);
-            } catch (err: any) { toast.error(err.message); }
-          }}>
-            重設所有密碼
-          </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button>
